@@ -12,6 +12,25 @@ typedef struct {
     ssize_t input_length; // length of input string
 } InputBuffer;
 
+typedef enum {
+    META_COMMAND_OK,
+    META_COMMAND_UNRECOGNIZED,
+} MetaCommandResult;
+
+typedef enum {
+    STATEMENT_INSERT,
+    STATEMENT_SELECT,
+} StatementType;
+
+typedef struct {
+    StatementType type;
+} Statement;
+
+typedef enum {
+    PREPARE_SUCCESS,
+    PREPARE_FAILURE,
+} PrepareStatementResult;
+
 InputBuffer* new_input_buffer() {
     InputBuffer* inputBuffer = malloc(sizeof(InputBuffer));
     inputBuffer->buffer = NULL;
@@ -21,9 +40,56 @@ InputBuffer* new_input_buffer() {
     return inputBuffer;
 }
 
+void close_input_buffer(InputBuffer* input_buffer) {
+    free(input_buffer->buffer);
+    free(input_buffer);
+}
+
 void print_prompt() {
     printf("db >");
 }
+
+// don't know what to do here
+MetaCommandResult execute_meta_command(InputBuffer* input_buffer) {
+    if (strcmp(input_buffer->buffer, ".exit") == 0) {
+        close_input_buffer(input_buffer); // do we still have to free if we exit?
+
+        printf("exiting! Bye bye\n");
+        // note: EXIT_SUCCESS and EXIT_FAILURE is preprocessor macro
+        exit(EXIT_SUCCESS);
+    } else {
+        return META_COMMAND_UNRECOGNIZED;
+    }
+}
+
+
+PrepareStatementResult prepare_statement(
+    InputBuffer *input_buffer,
+    Statement *statement
+) {
+    // strncmp compares just first n characters
+    if (strncmp(input_buffer->buffer, "select", 6) == 0) {
+        statement->type = STATEMENT_SELECT;
+    } else if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
+        statement->type = STATEMENT_INSERT;
+    } else {
+        return PREPARE_FAILURE;
+    }
+
+    return PREPARE_SUCCESS;
+}
+
+void execute_statement(Statement *statement) {
+    switch (statement->type) {
+        case STATEMENT_SELECT:
+            printf("this is where we do select\n");
+            break;
+        case STATEMENT_INSERT:
+            printf("this is where we do select\n");
+            break;
+    }
+}
+
 
 void read_input(InputBuffer* input_buffer) {
     assert(input_buffer);
@@ -42,26 +108,34 @@ void read_input(InputBuffer* input_buffer) {
     input_buffer->buffer[bytes_read - 1] = '\0'; // from \n to \0
 }
 
-void close_input_buffer(InputBuffer* input_buffer) {
-    free(input_buffer->buffer);
-    free(input_buffer);
-}
-
 int main(int argc, char* argv[]) {
     InputBuffer* input_buffer = new_input_buffer();
+
     while (true) {
         print_prompt();
         read_input(input_buffer);
 
-        // check if user want to exit
-        if (strcmp(input_buffer->buffer, ".exit") == 0) {
-            close_input_buffer(input_buffer); // do we still have to free if we exit?
-
-            // note: EXIT_SUCCESS and EXIT_FAILURE is preprocessor macro
-            exit(EXIT_SUCCESS);
-        } else {
-            printf("Unrecognized command '%s' .\n", input_buffer->buffer);
+        if (input_buffer->buffer[0] == '.') {
+            switch (execute_meta_command(input_buffer)) {
+                case META_COMMAND_OK:
+                    continue; // next command
+                case META_COMMAND_UNRECOGNIZED:
+                    printf("invalid meta command '%s'\n", input_buffer->buffer);
+                    continue; // next command
+            }
         }
+
+        Statement statement; // statement not persist because who care
+        switch (prepare_statement(input_buffer, &statement)) {
+            case PREPARE_SUCCESS:
+                break;
+            case PREPARE_FAILURE:
+                printf("invalid statement '%s'.\n", input_buffer->buffer);
+                continue;
+        }
+
+        execute_statement(&statement);
+        printf("execute.\n");
     }
 
 }
@@ -71,3 +145,7 @@ int main(int argc, char* argv[]) {
 // should be able to
 // 1. input somethign and got unrecognized "error"
 // 2. or if .exit -> exit
+//
+// step 2
+// 1. recognize meta command
+// 2. know insert and select command type
