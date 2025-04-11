@@ -139,13 +139,3 @@ int main(int argc, char* argv[]) {
     }
 
 }
-
-
-// step 1
-// should be able to
-// 1. input somethign and got unrecognized "error"
-// 2. or if .exit -> exit
-//
-// step 2
-// 1. recognize meta command
-// 2. know insert and select command type
