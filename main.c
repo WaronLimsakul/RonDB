@@ -4,6 +4,9 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#define COLUMN_NAME_SIZE 32
+#define COLUMN_EMAIL_SIZE 255
+
 // typedef telling compiler that, InputBuffer is an a name of a struct
 // and don't ever let me say it again. (so better than struct InputBuffer imo)
 typedef struct {
@@ -23,11 +26,19 @@ typedef enum {
 } StatementType;
 
 typedef struct {
+    int id;
+    char name[COLUMN_NAME_SIZE];
+    char email[COLUMN_EMAIL_SIZE];
+} Row;
+
+typedef struct {
     StatementType type;
+    Row row;
 } Statement;
 
 typedef enum {
     PREPARE_SUCCESS,
+    PREPARE_SYNTAX_ERROR,
     PREPARE_FAILURE,
 } PrepareStatementResult;
 
@@ -62,16 +73,27 @@ MetaCommandResult execute_meta_command(InputBuffer* input_buffer) {
     }
 }
 
-
 PrepareStatementResult prepare_statement(
     InputBuffer *input_buffer,
     Statement *statement
 ) {
     // strncmp compares just first n characters
-    if (strncmp(input_buffer->buffer, "select", 6) == 0) {
+    if (strcmp(input_buffer->buffer, "select") == 0) {
         statement->type = STATEMENT_SELECT;
     } else if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
         statement->type = STATEMENT_INSERT;
+
+        // start after "insert"
+        int words_scanned = sscanf(
+            &(input_buffer->buffer[6]),
+            "%d %s %s",
+            &(statement->row.id),
+            statement->row.name,
+            statement->row.email
+        );
+        if (words_scanned != 3) {
+            return PREPARE_SYNTAX_ERROR;
+        }
     } else {
         return PREPARE_FAILURE;
     }
@@ -86,10 +108,12 @@ void execute_statement(Statement *statement) {
             break;
         case STATEMENT_INSERT:
             printf("this is where we do select\n");
+            printf("id: %d\n", statement->row.id);
+            printf("name: %s\n", statement->row.name);
+            printf("email: %s\n", statement->row.email);
             break;
     }
 }
-
 
 void read_input(InputBuffer* input_buffer) {
     assert(input_buffer);
@@ -131,6 +155,9 @@ int main(int argc, char* argv[]) {
                 break;
             case PREPARE_FAILURE:
                 printf("invalid statement '%s'.\n", input_buffer->buffer);
+                continue;
+            case PREPARE_SYNTAX_ERROR:
+                printf("syntax error for statement: '%s'.\n", input_buffer->buffer);
                 continue;
         }
 

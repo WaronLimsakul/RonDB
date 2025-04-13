@@ -7,7 +7,12 @@ step 2
 1. recognize meta command
 2. know insert and select command type
 
-step 3
+step 3.1
 1. support inseting a row + printing all rows
+    - this format "insert id name email" or "select"
+    - yes, we have id -> int, name -> varchar32, email -> varchar255 (why not 256?)
 2. only in memory
 3. support single hardcoded table
+- there is sscanf(), like scanf but the read from first argument instead.
+- try to enum the error type
+- use prepro macro to define sizes or compile time var
