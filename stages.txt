@@ -16,3 +16,23 @@ step 3.1
 - there is sscanf(), like scanf but the read from first argument instead.
 - try to enum the error type
 - use prepro macro to define sizes or compile time var
+
+step3.2
+- Store rows in blocks of memory called pages
+- Each page stores as many rows as it can fit
+- Rows are serialized into a compact representation with each page
+- Pages are only allocated as needed <- so we can't just malloc(100 * page)
+- Keep a fixed-size array of pointers to pages
+
+1. a table struct that keep track of
+    - how many rows are in the table right now
+    - addresses of each page
+(you can determine size of page and max number of page in the table)
+    1.1 a function that create new table and set all zeroes
+    1.2 a function that frees table
+2. a function that get a row address from just table and row number.
+    - can allocate a new page if it doesn't exit
+3. delegate insert and select to different functions
+4. have a const representing the executing result for both execution type to share
+5. execute insert already row from the statement so we can just copy the row into the table (don't forget to check the max cap)
+6. execute select by just loop and print each row, be cheap here.
