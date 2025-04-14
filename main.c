@@ -107,7 +107,7 @@ void free_table(Table *table) {
 }
 
 void print_prompt() {
-    printf("RonDb >");
+    printf("RonDB >");
 }
 
 // don't know what to do here
@@ -201,7 +201,7 @@ ExecuteResult execute_select(Table *table) {
     for (int i = 0; i < table->num_rows; i++) {
         deserialize_row(&temp_row, get_row_addr(table, i));
         printf(
-            "id: %d | name: %s | email: %s \n",
+            "id: %d | name: %s | email: %s\n",
             temp_row.id,
             temp_row.name,
             temp_row.email
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
             case EXECUTE_SUCCESS:
                 break;
             case EXECUTE_TABLE_FULL:
-                printf("table is full");
+                printf("error: table is full\n");
                 break;
             case EXECUTE_FAILURE:
                 printf("execute command '%s' failed\n", input_buffer->buffer);
