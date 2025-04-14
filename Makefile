@@ -1,4 +1,4 @@
 .PHONY: run
 
 run:
-	gcc -Wall main.c -o program && ./program
+	gcc -Wall -g main.c -o program && ./program

@@ -98,7 +98,9 @@ Table *new_table(void) {
 
 void free_table(Table *table) {
     assert(table);
-    for (int i = 0; i < table->num_rows; i++) {
+    // trick for round up
+    int num_pages = (table->num_rows + (ROWS_PER_PAGE - 1)) / ROWS_PER_PAGE;
+    for (int i = 0; i < num_pages; i++) {
         free(table->pages[i]);
     }
     free(table);
@@ -185,9 +187,11 @@ void *get_row_addr(Table *table, uint32_t row_nums) {
         page_addr = malloc(PAGE_SIZE);
         table->pages[page_num] = page_addr;
     }
+
     // so costly
     int row_num_in_page = row_nums % ROWS_PER_PAGE;
-    return page_addr + (row_num_in_page * PAGE_SIZE);
+    int bytes_offset = row_num_in_page * ROW_SIZE;
+    return page_addr + bytes_offset;
 }
 
 ExecuteResult execute_select(Table *table) {
