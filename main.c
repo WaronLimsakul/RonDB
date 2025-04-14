@@ -99,15 +99,15 @@ Table *new_table(void) {
 void free_table(Table *table) {
     assert(table);
     // trick for round up
-    int num_pages = (table->num_rows + (ROWS_PER_PAGE - 1)) / ROWS_PER_PAGE;
-    for (int i = 0; i < num_pages; i++) {
+    // int num_pages = (table->num_rows + (ROWS_PER_PAGE - 1)) / ROWS_PER_PAGE;
+    for (int i = 0; table->pages[i]; i++) { // if table->pages[i] is null, we escape the loop
         free(table->pages[i]);
     }
     free(table);
 }
 
 void print_prompt() {
-    printf("db >");
+    printf("RonDb >");
 }
 
 // don't know what to do here
