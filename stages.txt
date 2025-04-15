@@ -36,3 +36,24 @@ step3.2
 4. have a const representing the executing result for both execution type to share
 5. execute insert already row from the statement so we can just copy the row into the table (don't forget to check the max cap)
 6. execute select by just loop and print each row, be cheap here.
+
+step 5
+1. have a Pager struct to manage page instead of using just page array in table
+    - a page is just one chunk of bytes in a file on disk
+    - we will store all pages in the same file.
+2. redo the new_table into db_open(file_name). it should
+    - open db file
+    - init pager
+    - init table
+    *note that we know the length of the file after we open it
+3. note the flags for open(filename, flags, mode): flags is what programm gonna
+    do with the file, mode is what can user do with the file.
+4. move the logic for fetching a page into pager's own method:
+5. get_page() method should have logic handling the cache miss (allocate memory and load from file)
+
+step 5.2
+1. we need db_close()
+    - flush page cache to disk (deal with full and partial page separately)
+    - close db file
+    - free all pages + pager + table
+2. just db_close() when exit

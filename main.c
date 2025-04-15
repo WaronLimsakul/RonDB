@@ -63,7 +63,7 @@ const uint32_t TABLE_MAX_ROWS = TABLE_MAX_PAGES * ROWS_PER_PAGE;
 
 typedef struct {
     uint32_t num_rows; // not sure type
-    Row* pages[TABLE_MAX_PAGES];
+    Pager *pager;
 } Table;
 
 typedef enum {
@@ -71,6 +71,12 @@ typedef enum {
     EXECUTE_TABLE_FULL,
     EXECUTE_FAILURE,
 } ExecuteResult;
+
+typedef struct {
+    int file_descriptor;
+    uint32_t file_length;
+    void *pages[TABLE_MAX_PAGES];
+} Pager,
 
 
 InputBuffer* new_input_buffer() {
@@ -89,12 +95,48 @@ void close_input_buffer(InputBuffer* input_buffer) {
 }
 
 
-Table *new_table(void) {
+Table *new_table(Pager *pager) {
     Table *table = malloc(sizeof(Table));
+    table->pager = pager;
     table->num_rows = 0;
-    for (int i = 0; i < TABLE_MAX_PAGES; i++) {
-        table->pages[i] = NULL;
+    // for (int i = 0; i < TABLE_MAX_PAGES; i++) {
+    //     table->pages[i] = NULL;
+    // }
+    return table;
+}
+
+Pager *open_pager(char *file_name) {
+    // the program can
+    // 1. read and write the file
+    // 2. create if the file doesn't exist
+    // 3. let user read the file
+    // 4. let user write the file
+    int fd = open(file_name, O_RDWR | O_CREATE, S_IRUSR | S_IWUSR);
+
+    if (fd == -1) {
+        printf("cannot open file '%s'\n", file_name);
+        exit(EXIT_FAILURE);
     }
+
+    Pager *new_pager = malloc(sizeof(Pager));
+    new_pager->file_descriptor = fd;
+
+    off_t file_length = lseek(fd, 0, SEEK_END);
+    new_pager->file_length = file_length;
+
+    for (int i = 0; i < TABLE_MAX_PAGES; i++) {
+        new_pager->pages[i] = NULL;
+    }
+    return new_pager;
+}
+
+Table *db_open(char *file_name) {
+
+    Pager *pager = open_pager(fd);
+    Table *table = malloc(sizeof(Table));
+
+    table->num_rows = pager->file_lenght / ROW_SIZE;
+    table->pager = pager;
     return table;
 }
 
@@ -194,20 +236,43 @@ void deserialize_row(Row* destination, void *source) {
     memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
 }
 
+void *pager_get_page(Pager *pager, int page_num) {
+    assert(pager);
+    assert(page_num < TABLE_MAX_PAGES);
+
+    // cache miss: allocate a page cache + load from file
+    if (pager->pages[page_num] == NULL) {
+        void *new_page = malloc(PAGE_SIZE);
+
+        // how many pages (round up). might get int overflow.
+        int num_pages = (pager->file_length + (PAGE_SIZE - 1)) / PAGE_SIZE;
+
+        if (page_num <= num_pages) {
+            // go the start of the page
+            lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
+            // read that page to the allocated memory
+            ssize_t bytes_read = read(pager->file_descriptor, new_page, PAGE_SIZE);
+            if (bytes_read == -1) {
+                printf("error reading the file\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        pager->pages[page_num] = new_page;
+    }
+
+    return pager->pages[page_num];
+}
+
 // get row address from table and row number
 // malloc a new page if required
-void *get_row_addr(Table *table, uint32_t row_nums) {
+void *table_get_row(Table *table, uint32_t row_nums) {
     assert(table);
     assert(row_nums < TABLE_MAX_ROWS);
 
     int page_num = row_nums / ROWS_PER_PAGE;
-    void *page_addr = table->pages[page_num];
-    if (page_addr == NULL) {
-        page_addr = malloc(PAGE_SIZE);
-        table->pages[page_num] = page_addr;
-    }
+    void *page_addr = pager_get_page(table->pager, page_num);
 
-    // so costly
     int row_num_in_page = row_nums % ROWS_PER_PAGE;
     int bytes_offset = row_num_in_page * ROW_SIZE;
     return page_addr + bytes_offset;
@@ -219,7 +284,7 @@ ExecuteResult execute_select(Table *table) {
     Row temp_row;
     int i = 0;
     for (; i < table->num_rows; i++) {
-        deserialize_row(&temp_row, get_row_addr(table, i));
+        deserialize_row(&temp_row, table_get_row(table, i));
         printf(
             "id: %d | name: %s | email: %s\n",
             temp_row.id,
@@ -244,7 +309,7 @@ ExecuteResult execute_insert(Table *table, Row *row) {
         return EXECUTE_TABLE_FULL;
     }
 
-    Row *new_row = get_row_addr(table, table->num_rows);
+    Row *new_row = table_get_row(table, table->num_rows);
     serialize_row(new_row, row);
 
     table->num_rows ++;
