@@ -44,6 +44,7 @@ typedef enum {
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
     PREPARE_INPUT_TOO_LONG,
+    PREPARE_NEGATIVE_ID,
     PREPARE_FAILURE,
 } PrepareStatementResult;
 
@@ -159,7 +160,12 @@ PrepareStatementResult prepare_statement(
             return PREPARE_INPUT_TOO_LONG;
         }
 
-        uint32_t id = atoi(id_str);
+        int id = atoi(id_str);
+        if (id < 0) {
+            return PREPARE_NEGATIVE_ID;
+        }
+
+        // but id should be uint32 ?
         statement->row_to_insert.id = id;
         strcpy(statement->row_to_insert.name, name);
         strcpy(statement->row_to_insert.email, email);
@@ -307,6 +313,9 @@ int main(int argc, char* argv[]) {
                 continue;
             case PREPARE_INPUT_TOO_LONG:
                 printf("error: input is too long\n");
+                continue;
+            case PREPARE_NEGATIVE_ID:
+                printf("error: id is negative\n");
                 continue;
         }
 

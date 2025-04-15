@@ -69,4 +69,19 @@ describe 'database' do
       "RonDB >exiting! Bye bye",
     ])
   end
+
+  it 'does not allow negative id' do
+    script = [
+      "insert -1 name email",
+      "select",
+      ".exit",
+    ]
+
+    result = run_script(script)
+    expect(result).to match_array([
+      "RonDB >error: id is negative",
+      "RonDB >",
+      "RonDB >exiting! Bye bye",
+    ])
+  end
 end
