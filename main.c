@@ -31,8 +31,8 @@ typedef enum {
 
 typedef struct {
     uint32_t id; // type from stdint
-    char name[COLUMN_NAME_SIZE];
-    char email[COLUMN_EMAIL_SIZE];
+    char name[COLUMN_NAME_SIZE + 1]; // the last one for \0
+    char email[COLUMN_EMAIL_SIZE + 1];
 } Row;
 
 typedef struct {
@@ -43,6 +43,7 @@ typedef struct {
 typedef enum {
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
+    PREPARE_INPUT_TOO_LONG,
     PREPARE_FAILURE,
 } PrepareStatementResult;
 
@@ -133,23 +134,35 @@ PrepareStatementResult prepare_statement(
 ) {
     assert(input_buffer);
     assert(statement);
-    // strncmp compares just first n characters
     if (strcmp(input_buffer->buffer, "select") == 0) {
         statement->type = STATEMENT_SELECT;
+
+    // strncmp compares just first n characters
     } else if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
         statement->type = STATEMENT_INSERT;
 
-        // start after "insert"
-        int words_scanned = sscanf(
-            &(input_buffer->buffer[6]),
-            "%d %s %s",
-            &(statement->row_to_insert.id),
-            statement->row_to_insert.name,
-            statement->row_to_insert.email
-        );
-        if (words_scanned != 3) {
+        // this function trim the first param until the second param
+        // then return the trimmed part.
+        strtok(input_buffer->buffer, " ");
+
+        // you can call it again with NULL and it will use the same
+        // string (but trimmed) as first param again. cool
+        char *id_str = strtok(NULL, " ");
+        char *name = strtok(NULL, " ");
+        char *email = strtok(NULL, " ");
+
+        if (!(id_str && name && email)) {
             return PREPARE_SYNTAX_ERROR;
         }
+
+        if (strlen(name) > COLUMN_NAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE) {
+            return PREPARE_INPUT_TOO_LONG;
+        }
+
+        uint32_t id = atoi(id_str);
+        statement->row_to_insert.id = id;
+        strcpy(statement->row_to_insert.name, name);
+        strcpy(statement->row_to_insert.email, email);
     } else {
         return PREPARE_FAILURE;
     }
@@ -198,7 +211,8 @@ ExecuteResult execute_select(Table *table) {
     assert(table);
 
     Row temp_row;
-    for (int i = 0; i < table->num_rows; i++) {
+    int i = 0;
+    for (; i < table->num_rows; i++) {
         deserialize_row(&temp_row, get_row_addr(table, i));
         printf(
             "id: %d | name: %s | email: %s\n",
@@ -206,6 +220,11 @@ ExecuteResult execute_select(Table *table) {
             temp_row.name,
             temp_row.email
         );
+    }
+
+    // want to at least print \n if there is no row
+    if (i == 0) {
+        printf("\n");
     }
 
     return EXECUTE_SUCCESS;
@@ -285,6 +304,9 @@ int main(int argc, char* argv[]) {
                 continue;
             case PREPARE_SYNTAX_ERROR:
                 printf("syntax error for statement: '%s'.\n", input_buffer->buffer);
+                continue;
+            case PREPARE_INPUT_TOO_LONG:
+                printf("error: input is too long\n");
                 continue;
         }
 

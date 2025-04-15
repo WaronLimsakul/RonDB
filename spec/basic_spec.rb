@@ -53,4 +53,20 @@ describe 'database' do
     ])
   end
 
+  it 'does not allow string longer than maximum length' do
+    long_name = "a"*33
+    long_email = "b"*256
+    script = [
+      "insert 1 #{long_name} #{long_email}",
+      "select",
+      ".exit",
+    ]
+
+    result = run_script(script)
+    expect(result).to match_array([
+      "RonDB >error: input is too long",
+      "RonDB >",
+      "RonDB >exiting! Bye bye",
+    ])
+  end
 end
