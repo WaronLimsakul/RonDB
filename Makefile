@@ -19,10 +19,9 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 
 run:
 	make && ./RonDB mydb.db
+
 clean:
-		rm RonDB
-		rm mydb.db
-		rm test.db
-		rm -rf build/*
+	rm -rf $(OBJDIR) $(TARGET)
+
 test:
 	make && bundle exec rspec
