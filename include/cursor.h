@@ -6,7 +6,8 @@
 
 typedef struct {
     Table *table;
-    uint32_t row_num;
+    uint32 page_num;
+    uint32 cell_num;
     bool end_of_table;
 } Cursor;
 

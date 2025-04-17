@@ -84,3 +84,34 @@ so we need size + offset for that too
     - key
     - value
     - cell
+
+step 8.2: Method for access leaf node fields
+- num cells
+- node cells
+- node key
+- node value
+
+step 8.3:
+1. We will only store whole pages from now on
+2. Pagers have number of pages
+3. Tables only store root page number. no number of rows
+
+step 8.4: change cursor
+1. contain page_num and cell_num instead of row_num
+2. change table_start() and table_end() to work properly
+3. cursor_value() and cursor_advance() too
+
+step 8.5
+1. update db_open() to use b-tree
+    - delete useless things
+    - initialize new root node if the file is empty
+2. We need leaf_node_insert(cursor, key, Row* value) to insert into where cursor point
+    - check max cells
+    - if the insert cell is in between, make room for it
+    - cpy to the space
+
+step 8.6
+1. update execute_insert()
+    - delete useless things
+    - use the leaf_node_inser() (still use the table_end cursor)
+2. add command to print constant

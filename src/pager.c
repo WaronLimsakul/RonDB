@@ -7,7 +7,7 @@
 
 #include "pager.h"
 
-Pager *open_pager(char *file_name) {
+Pager *pager_open(char *file_name) {
     // the program can
     // 1. read and write the file
     // 2. create if the file doesn't exist
@@ -24,7 +24,14 @@ Pager *open_pager(char *file_name) {
     new_pager->file_descriptor = fd;
 
     off_t file_length = lseek(fd, 0, SEEK_END);
+    if (file_length % PAGE_SIZE != 0) {
+        printf("file lenght is not whole pages\n");
+        exit(EXIT_FAILURE);
+    }
+
     new_pager->file_length = file_length;
+    // don't have to rounded up, whole page_size
+    new_pager->num_pages = file_length / PAGE_SIZE;
 
     for (int i = 0; i < TABLE_MAX_PAGES; i++) {
         new_pager->pages[i] = NULL;
@@ -41,13 +48,14 @@ void *pager_get_page(Pager *pager, int page_num) {
     if (pager->pages[page_num] == NULL) {
         void *new_page = malloc(PAGE_SIZE);
 
-        // how many pages (round up). might get int overflow.
-        int num_pages = (pager->file_length + (PAGE_SIZE - 1)) / PAGE_SIZE;
+        // don't need to round up anymore, we store whole pages
+        int num_pages = pager->file_length / PAGE_SIZE;
 
         if (page_num <= num_pages) {
             // go the start of the page
             lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
-            // read that page to the allocated memory
+            // read that page to the allocated memory.
+            // if file is empty, it return 0 (EOF). so we chill
             ssize_t bytes_read = read(pager->file_descriptor, new_page, PAGE_SIZE);
             if (bytes_read == -1) {
                 printf("error reading the file\n");
@@ -56,12 +64,17 @@ void *pager_get_page(Pager *pager, int page_num) {
         }
 
         pager->pages[page_num] = new_page;
+
+        // ?
+        if (page_num >= pager->num_pages) {
+            pager->num_pages = page_num + 1;
+        }
     }
 
     return pager->pages[page_num];
 }
 
-void pager_flush(Pager* pager, int page_num, size_t size) {
+void pager_flush(Pager* pager, int page_num) {
     assert(pager);
     assert(page_num < TABLE_MAX_PAGES);
 
@@ -73,7 +86,7 @@ void pager_flush(Pager* pager, int page_num, size_t size) {
         exit(EXIT_FAILURE);
     }
 
-    ssize_t write_result = write(fd, pager->pages[page_num], size);
+    ssize_t write_result = write(fd, pager->pages[page_num], PAGE_SIZE);
     if (write_result == -1) {
         printf("error flushing page number: %d (writing)\n", page_num);
         exit(EXIT_FAILURE);
