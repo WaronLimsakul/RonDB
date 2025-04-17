@@ -28,7 +28,3 @@ typedef struct {
 Table *db_open(char *file_name);
 
 void db_close(Table *table);
-
-// get row address from table and row number
-// malloc a new page if required
-void *table_get_row(Table *table, uint32_t row_nums);

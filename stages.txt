@@ -66,3 +66,21 @@ step 6: cursor
 2. then we can get cursor from the start or the end of table
 3. retrieving the row pointer using cursor instead
 4. use cursor when execute insert and select
+
+step 7: learn about b+ tree
+
+step 8: B+ tree nodes
+1. we need enum for node type (internal or leaf)
+2. we need offset and size for node header
+    - type
+    - is root?
+    - parent pointer
+    - in total bytes
+3. that's for every node. But for leaf, we need more
+    - how many cells we have
+    - in total bytes
+4. in the leaf, we have array of cells (1 cell = key + value (value = row))
+so we need size + offset for that too
+    - key
+    - value
+    - cell

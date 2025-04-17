@@ -59,16 +59,16 @@ void db_close(Table *table) {
 }
 
 
-// get row address from table and row number
-// malloc a new page if required
-void *table_get_row(Table *table, uint32_t row_nums) {
-    assert(table);
-    assert(row_nums < TABLE_MAX_ROWS);
+// // get row address from table and row number
+// // malloc a new page if required
+// void *table_get_row(Table *table, uint32_t row_nums) {
+//     assert(table);
+//     assert(row_nums < TABLE_MAX_ROWS);
 
-    int page_num = row_nums / ROWS_PER_PAGE;
-    void *page_addr = pager_get_page(table->pager, page_num);
+//     int page_num = row_nums / ROWS_PER_PAGE;
+//     void *page_addr = pager_get_page(table->pager, page_num);
 
-    int row_num_in_page = row_nums % ROWS_PER_PAGE;
-    int bytes_offset = row_num_in_page * ROW_SIZE;
-    return page_addr + bytes_offset;
-}
+//     int row_num_in_page = row_nums % ROWS_PER_PAGE;
+//     int bytes_offset = row_num_in_page * ROW_SIZE;
+//     return page_addr + bytes_offset;
+// }
