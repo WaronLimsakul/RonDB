@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "../include/table.h"
+#include "table.h"
 
 const uint32_t ID_SIZE = size_of_attr(Row, id);
 const uint32_t NAME_SIZE = size_of_attr(Row, name);

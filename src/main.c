@@ -7,9 +7,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "../include/statement.h"
-#include "../include/vm.h"
-#include "../include/table.h"
+#include "statement.h"
+#include "vm.h"
+#include "table.h"
 
 void print_prompt() {
     printf("RonDB >");

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "../include/pager.h"
+#include "pager.h"
 
 Pager *open_pager(char *file_name) {
     // the program can

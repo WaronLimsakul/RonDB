@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../include/statement.h"
+#include "statement.h"
 
 InputBuffer* new_input_buffer() {
     InputBuffer* inputBuffer = malloc(sizeof(InputBuffer));

@@ -2,7 +2,7 @@
 
 #include <unistd.h>
 
-#include "../include/table.h"
+#include "table.h"
 
 // typedef telling compiler that, InputBuffer is an a name of a struct
 // and don't ever let me say it again. (so better than struct InputBuffer imo)

@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../include/vm.h"
+#include "vm.h"
 
 // don't know what to do here
 MetaCommandResult execute_meta_command(InputBuffer* input_buffer, Table *table) {
