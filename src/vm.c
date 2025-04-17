@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "vm.h"
+#include "cursor.h"
 
 // don't know what to do here
 MetaCommandResult execute_meta_command(InputBuffer* input_buffer, Table *table) {
@@ -26,22 +27,24 @@ ExecuteResult execute_select(Table *table) {
     assert(table);
 
     Row temp_row;
-    int i = 0;
-    for (; i < table->num_rows; i++) {
-        deserialize_row(&temp_row, table_get_row(table, i));
+    Cursor *cursor = table_start(table);
+    while (!cursor->end_of_table) {
+        deserialize_row(&temp_row, cursor_value(cursor));
         printf(
             "id: %d | name: %s | email: %s\n",
             temp_row.id,
             temp_row.name,
             temp_row.email
         );
+        cursor_advance(cursor);
     }
 
     // want to at least print \n if there is no row
-    if (i == 0) {
+    if (table->num_rows == 0) {
         printf("\n");
     }
 
+    free(cursor);
     return EXECUTE_SUCCESS;
 }
 
@@ -53,8 +56,11 @@ ExecuteResult execute_insert(Table *table, Row *row) {
         return EXECUTE_TABLE_FULL;
     }
 
-    Row *new_row = table_get_row(table, table->num_rows);
-    serialize_row(new_row, row);
+    Cursor *end_cursor = table_end(table);
+    Row *new_row_addr = cursor_value(end_cursor);
+    serialize_row(new_row_addr, row);
+
+    free(end_cursor); // ?
 
     table->num_rows ++;
     printf("insert 1\n");

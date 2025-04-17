@@ -60,3 +60,9 @@ step 5.2
 3. we need pager_flush(pager, page_num, size)
     - just write the page into the file in proper location
 4. update main() to take more db file when called
+
+step 6: cursor
+1. we need cursor struct.
+2. then we can get cursor from the start or the end of table
+3. retrieving the row pointer using cursor instead
+4. use cursor when execute insert and select

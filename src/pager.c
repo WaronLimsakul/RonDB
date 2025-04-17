@@ -32,6 +32,7 @@ Pager *open_pager(char *file_name) {
     return new_pager;
 }
 
+// get page pointer in cache
 void *pager_get_page(Pager *pager, int page_num) {
     assert(pager);
     assert(page_num < TABLE_MAX_PAGES);

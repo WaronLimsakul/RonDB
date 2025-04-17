@@ -1,11 +1,6 @@
-#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <stdlib.h>
 
 #include "statement.h"
 #include "vm.h"
@@ -14,7 +9,6 @@
 void print_prompt() {
     printf("RonDB >");
 }
-
 
 int main(int argc, char* argv[]) {
     InputBuffer* input_buffer = new_input_buffer();
