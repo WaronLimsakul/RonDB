@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "table.h"
+#include "b-tree.h"
 
 const uint32_t ID_SIZE = size_of_attr(Row, id);
 const uint32_t NAME_SIZE = size_of_attr(Row, name);

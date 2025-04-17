@@ -115,3 +115,22 @@ step 8.6
     - delete useless things
     - use the leaf_node_inser() (still use the table_end cursor)
 2. add command to print constant
+    - should take ".constants" and we print
+    - printf("ROW_SIZE: %d\n", ROW_SIZE);
+    - printf("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
+    - printf("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
+    - printf("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
+    - printf("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
+    - printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
+3. add test for constants
+4. add command ".btree" to print out the tree structure
+    - print the page 0 for now
+    - helper should take node and print like
+    - Tree:
+      leaf (size 3)
+        - 0 : 3
+        - 1 : 1
+        - 2 : 2
+    - so 0-index : id
+step 8.7
+1.

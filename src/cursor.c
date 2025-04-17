@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
-#include "cursor.h"
-#include "config.h"
+
 #include "b-tree.h"
 
 Cursor *table_start(Table *table) {
@@ -29,7 +28,7 @@ Cursor *table_end(Table *table) {
     cursor->page_num = table->root_page_num;
 
     void *last_page = pager_get_page(table->pager, cursor->page_num);
-    cursor->cell_num = leaf_node_num_cells(last_page);
+    cursor->cell_num = *leaf_node_num_cells(last_page);
     cursor->end_of_table = true;
 
     return cursor;

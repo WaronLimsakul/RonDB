@@ -88,4 +88,44 @@ describe 'database' do
       "RonDB >exiting! Bye bye",
     ])
   end
+
+  it 'can print constants' do
+    scripts=  [
+      ".constants",
+      ".exit",
+    ]
+    result = run_script(scripts)
+
+    expect(result).to match_array([
+      "RonDB >Constants:",
+      "ROW_SIZE: 293",
+      "COMMON_NODE_HEADER_SIZE: 6",
+      "LEAF_NODE_HEADER_SIZE: 10",
+      "LEAF_NODE_CELL_SIZE: 297",
+      "LEAF_NODE_SPACE_FOR_CELLS: 4086",
+      "LEAF_NODE_MAX_CELLS: 13",
+      "RonDB >exiting! Bye bye",
+    ])
+  end
+
+  it 'can print out the structure of one-node b-tree' do
+    script = [3, 1, 2].map do |i|
+    "insert #{i} ron#{i} ron#{i}@test.com"
+    end
+
+    script << ".btree"
+    script << ".exit"
+
+    expect(result).to match_array([
+      "RonDB >insert 1",
+      "RonDB >insert 1",
+      "RonDB >insert 1",
+      "RonDB >Tree:",
+      "leaf (size 3)",
+      "  - 0 : 3",
+      "  - 1 : 1",
+      "  - 2 : 2",
+      "RonDB >exiting! Bye bye"
+    ])
+  end
 end

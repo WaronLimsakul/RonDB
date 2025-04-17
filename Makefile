@@ -21,7 +21,7 @@ run:
 	make && ./RonDB mydb.db
 
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR) $(TARGET) *.db
 
 test:
 	make && bundle exec rspec

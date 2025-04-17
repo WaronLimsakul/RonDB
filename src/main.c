@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
         if (input_buffer->buffer[0] == '.') {
             switch (execute_meta_command(input_buffer, table)) {
-                case META_COMMAND_OK:
+                case META_COMMAND_SUCCESS:
                     continue; // next command
                 case META_COMMAND_UNRECOGNIZED:
                     printf("invalid meta command '%s'\n", input_buffer->buffer);

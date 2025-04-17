@@ -4,7 +4,7 @@
 #include "table.h"
 
 typedef enum {
-    META_COMMAND_OK,
+    META_COMMAND_SUCCESS,
     META_COMMAND_UNRECOGNIZED,
 } MetaCommandResult;
 

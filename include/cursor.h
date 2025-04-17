@@ -3,11 +3,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "table.h"
+#include "config.h"
 
 typedef struct {
     Table *table;
-    uint32 page_num;
-    uint32 cell_num;
+    uint32_t page_num;
+    uint32_t cell_num;
     bool end_of_table;
 } Cursor;
 
