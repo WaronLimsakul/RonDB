@@ -27,7 +27,9 @@ const uint32_t LEAF_NODE_HEADER_SIZE =
 const uint32_t LEAF_NODE_KEY_SIZE = sizeof(uint32_t);
 const uint32_t LEAF_NODE_KEY_OFFSET = 0;
 
-const uint32_t LEAF_NODE_VALUE_SIZE = sizeof(ROW_SIZE);
+// Can't use ROW_SIZE because it's in table.c and we need to know in compile time
+const uint32_t LEAF_NODE_VALUE_SIZE =
+    size_of_attr(Row, id) + size_of_attr(Row, name) + size_of_attr(Row, email);
 const uint32_t LEAF_NODE_VALUE_OFFSET = LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
 
 const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
@@ -71,7 +73,7 @@ void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value) {
 
     // if we need to insert in betwee, shift to right to make room
     if (cursor->cell_num < num_cells) {
-        for (int i = num_cells; i > cursor->cell_num; i++) {
+        for (int i = num_cells; i > cursor->cell_num; i--) {
             memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i-1), LEAF_NODE_CELL_SIZE);
         }
     }

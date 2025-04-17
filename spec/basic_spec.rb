@@ -116,6 +116,7 @@ describe 'database' do
     script << ".btree"
     script << ".exit"
 
+    result = run_script(script)
     expect(result).to match_array([
       "RonDB >insert 1",
       "RonDB >insert 1",

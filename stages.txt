@@ -131,6 +131,8 @@ step 8.6
         - 0 : 3
         - 1 : 1
         - 2 : 2
-    - so 0-index : id
-step 8.7
-1.
+    - so 0-index : in
+
+Debug
+1. insert get empty name + email in row except the last one
+2. .constants doesn't return like we expect

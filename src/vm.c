@@ -86,7 +86,6 @@ ExecuteResult execute_insert(Table *table, Row *row) {
     void* node = pager_get_page(table->pager, table->root_page_num);
     uint32_t num_cells = *leaf_node_num_cells(node);
     if (num_cells >= LEAF_NODE_MAX_CELLS) {
-        printf("table is full\n");
         return EXECUTE_TABLE_FULL;
     }
 
