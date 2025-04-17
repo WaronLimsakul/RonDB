@@ -52,8 +52,11 @@ step 5
 5. get_page() method should have logic handling the cache miss (allocate memory and load from file)
 
 step 5.2
-1. we need db_close()
-    - flush page cache to disk (deal with full and partial page separately)
+1. we need db_close(table)
+    - flush cahced pages to disk (deal with full and partial page separately)
     - close db file
     - free all pages + pager + table
-2. just db_close() when exit
+2. just db_close() when exit (so do_meta_command() need table now)
+3. we need pager_flush(pager, page_num, size)
+    - just write the page into the file in proper location
+4. update main() to take more db file when called

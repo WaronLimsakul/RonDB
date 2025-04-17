@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define COLUMN_NAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
@@ -62,6 +64,12 @@ const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
 const uint32_t TABLE_MAX_ROWS = TABLE_MAX_PAGES * ROWS_PER_PAGE;
 
 typedef struct {
+    int file_descriptor;
+    uint32_t file_length;
+    void *pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
     uint32_t num_rows; // not sure type
     Pager *pager;
 } Table;
@@ -72,11 +80,6 @@ typedef enum {
     EXECUTE_FAILURE,
 } ExecuteResult;
 
-typedef struct {
-    int file_descriptor;
-    uint32_t file_length;
-    void *pages[TABLE_MAX_PAGES];
-} Pager,
 
 
 InputBuffer* new_input_buffer() {
@@ -111,7 +114,7 @@ Pager *open_pager(char *file_name) {
     // 2. create if the file doesn't exist
     // 3. let user read the file
     // 4. let user write the file
-    int fd = open(file_name, O_RDWR | O_CREATE, S_IRUSR | S_IWUSR);
+    int fd = open(file_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 
     if (fd == -1) {
         printf("cannot open file '%s'\n", file_name);
@@ -132,21 +135,61 @@ Pager *open_pager(char *file_name) {
 
 Table *db_open(char *file_name) {
 
-    Pager *pager = open_pager(fd);
+    Pager *pager = open_pager(file_name);
     Table *table = malloc(sizeof(Table));
 
-    table->num_rows = pager->file_lenght / ROW_SIZE;
+    table->num_rows = pager->file_length / ROW_SIZE;
     table->pager = pager;
     return table;
 }
 
-void free_table(Table *table) {
-    assert(table);
-    // trick for round up
-    // int num_pages = (table->num_rows + (ROWS_PER_PAGE - 1)) / ROWS_PER_PAGE;
-    for (int i = 0; table->pages[i]; i++) { // if table->pages[i] is null, we escape the loop
-        free(table->pages[i]);
+void pager_flush(Pager* pager, int page_num, size_t size) {
+    assert(pager);
+    assert(page_num < TABLE_MAX_PAGES);
+
+    int fd = pager->file_descriptor;
+
+    off_t seek_result = lseek(fd, PAGE_SIZE * page_num, SEEK_SET);
+    if (seek_result == -1) {
+        printf("error flushing page number: %d (seeking)\n", page_num);
+        exit(EXIT_FAILURE);
     }
+
+    ssize_t write_result = write(fd, pager->pages[page_num], size);
+    if (write_result == -1) {
+        printf("error flushing page number: %d (writing)\n", page_num);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void db_close(Table *table) {
+    assert(table);
+
+    Pager *pager = table->pager;
+    // deal with full pages first
+    int num_full_pages = table->num_rows / ROWS_PER_PAGE;
+
+    for (int i = 0; i < num_full_pages; i++) {
+        pager_flush(pager, i, PAGE_SIZE);
+    }
+    // deal with partial page
+    int partial_page_rows = table->num_rows % ROWS_PER_PAGE;
+    if (partial_page_rows > 0) {
+        pager_flush(pager, num_full_pages, ROW_SIZE * partial_page_rows);
+    }
+
+    int close_status = close(pager->file_descriptor);
+    if (close_status == -1) {
+        printf("error closing db connection\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < TABLE_MAX_PAGES; i++) {
+        if (pager->pages[i] != NULL) {
+            free(pager->pages[i]);
+        }
+    }
+    free(pager);
     free(table);
 }
 
@@ -161,7 +204,8 @@ MetaCommandResult execute_meta_command(InputBuffer* input_buffer, Table *table) 
 
     if (strcmp(input_buffer->buffer, ".exit") == 0) {
         close_input_buffer(input_buffer); // do we still have to free if we exit?
-        free_table(table);
+        // free_table(table);
+        db_close(table);
 
         printf("exiting! Bye bye\n");
         // note: EXIT_SUCCESS and EXIT_FAILURE is preprocessor macro
@@ -350,7 +394,15 @@ void read_input(InputBuffer* input_buffer) {
 
 int main(int argc, char* argv[]) {
     InputBuffer* input_buffer = new_input_buffer();
-    Table* table = new_table();
+
+    // we need db file name
+    if (argc != 2) {
+        printf("need db file name\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char *file_name = argv[1];
+    Table* table = db_open(file_name);
 
     while (true) {
         print_prompt();
