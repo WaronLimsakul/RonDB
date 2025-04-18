@@ -37,13 +37,15 @@ const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
 const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
 const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
 
-// node type is at the front
-NodeType* node_type(void *node) {
-    return node + NODE_TYPE_OFFSET;
+// only check the first 8 bits
+NodeType node_type(void *node) {
+    uint8_t value = *(uint8_t*)(node + NODE_TYPE_OFFSET);
+    return (NodeType)value;
 }
 
+// only change the first 8 bits
 void set_node_type(void *node, NodeType type) {
-    *node_type(node) = type;
+    *(uint8_t*)(node + NODE_TYPE_OFFSET) = (uint8_t)type;
 }
 
 int32_t* leaf_node_num_cells(void *node) {
@@ -67,7 +69,7 @@ void *leaf_node_value(void *node, int32_t cell_num) {
 }
 
 void init_leaf_node(void *node) {
-    set_node_type(node) = LEAF_NODE;
+    set_node_type(node, LEAF_NODE);
     *leaf_node_num_cells(node) = 0;
 }
 
@@ -100,8 +102,8 @@ void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value) {
     // memcpy(target + LEAF_NODE_KEY_SIZE, value, LEAF_NODE_VALUE_SIZE);
 }
 
-static bool high_key(void *node, uint32_t key) {
-    return leaf_node_key(node) >= key;
+static bool high_key(void *node, uint32_t key, uint32_t target) {
+    return *leaf_node_key(node, key) >= target;
 }
 
 Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key) {
@@ -110,12 +112,12 @@ Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key) {
     void *node = pager_get_page(table->pager, page_num);
     uint32_t low = 0;
 
-    uint32_t num_cells = leaf_node_num_cells(node);
+    uint32_t num_cells = *leaf_node_num_cells(node);
     uint32_t high = num_cells;
 
     while (low < high) {
         uint32_t mid = low + ((high- low) / 2);
-        if (high_key(node, key)) {
+        if (high_key(node, mid, key)) {
             high = mid;
         } else {
             low = mid + 1;

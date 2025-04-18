@@ -91,7 +91,7 @@ ExecuteResult execute_insert(Table *table, Row *row) {
 
     uint32_t key_to_insert = row->id;
     Cursor *cursor = table_find(table, key_to_insert);
-    uint32_t key_at_node = leaf_node_key(node);
+    uint32_t key_at_node = *leaf_node_key(node, cursor->cell_num);
 
     // catch duplicate key
     if (!cursor->end_of_table && key_to_insert == key_at_node) {

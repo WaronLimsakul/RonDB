@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "b-tree.h"
 
@@ -27,7 +28,7 @@ Cursor *table_find(Table *table, uint32_t key) {
             return leaf_node_find(table, table->root_page_num, key);
         case INTERNAL_NODE:
             printf("waiting for internal node implementation\n");
-            return NULL;
+            exit(EXIT_FAILURE);
     }
     return NULL;
 }

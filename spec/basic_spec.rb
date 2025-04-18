@@ -123,9 +123,26 @@ describe 'database' do
       "RonDB >insert 1",
       "RonDB >Tree:",
       "leaf (size 3)",
-      "  - 0 : 3",
-      "  - 1 : 1",
-      "  - 2 : 2",
+      "  - 0 : 1",
+      "  - 1 : 2",
+      "  - 2 : 3",
+      "RonDB >exiting! Bye bye"
+    ])
+  end
+
+  it 'does not allow inserting duplicate key' do
+    script = [
+      "insert 1 ron ron@test.com",
+      "insert 1 ron ron@test.com",
+      "select",
+      ".exit"
+    ]
+
+    result = run_script(script)
+    expect(result).to match_array([
+      "RonDB >insert 1",
+      "RonDB >error: duplicate key",
+      "RonDB >id: 1 | name: ron | email: ron@test.com",
       "RonDB >exiting! Bye bye"
     ])
   end
