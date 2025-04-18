@@ -27,6 +27,9 @@ extern const uint32_t LEAF_NODE_CELL_SIZE;
 extern const uint32_t LEAF_NODE_SPACE_FOR_CELLS;
 extern const uint32_t LEAF_NODE_MAX_CELLS;
 
+extern const uint32_t LEAF_NODE_SPLIT_LEFT_CELLS;
+extern const uint32_t LEAF_NODE_SPLIT_RIGHT_CELLS;
+
 typedef enum {
     INTERNAL_NODE,
     LEAF_NODE,

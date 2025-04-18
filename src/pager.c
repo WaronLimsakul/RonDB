@@ -92,3 +92,12 @@ void pager_flush(Pager* pager, int page_num) {
         exit(EXIT_FAILURE);
     }
 }
+
+int pager_get_unused_page(Pager *pager) {
+    int num_pages = pager->num_pages;
+    if (num_pages == TABLE_MAX_PAGES) {
+        return -1;
+    } else {
+        return (int)num_pages;
+    }
+}

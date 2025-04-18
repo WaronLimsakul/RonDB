@@ -15,3 +15,5 @@ Pager *pager_open(char *file_name);
 void *pager_get_page(Pager *pager, int page_num);
 
 void pager_flush(Pager* pager, int page_num);
+
+int pager_get_unused_page(Pager *pager);

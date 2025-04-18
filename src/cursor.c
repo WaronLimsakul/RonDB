@@ -27,8 +27,8 @@ Cursor *table_find(Table *table, uint32_t key) {
         case LEAF_NODE:
             return leaf_node_find(table, table->root_page_num, key);
         case INTERNAL_NODE:
-            printf("waiting for internal node implementation\n");
-            exit(EXIT_FAILURE);
+            // handle internal node
+            break;
     }
     return NULL;
 }

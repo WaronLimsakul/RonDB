@@ -85,9 +85,6 @@ ExecuteResult execute_insert(Table *table, Row *row) {
 
     void* node = pager_get_page(table->pager, table->root_page_num);
     uint32_t num_cells = *leaf_node_num_cells(node);
-    if (num_cells >= LEAF_NODE_MAX_CELLS) {
-        return EXECUTE_TABLE_FULL;
-    }
 
     uint32_t key_to_insert = row->id;
     Cursor *cursor = table_find(table, key_to_insert);

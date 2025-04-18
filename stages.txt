@@ -139,5 +139,49 @@ step 9
 3. we need cursor table_find(table, key) to get cursor at that part
     - should just check if the root is leaf or internal and execute when it's leaf
 4. we need cursor leaf_node_find(table, page_num, key) (binary search)
-
 5. not not sure if we need return node type of just pointer to it is enough
+
+step 10
+1. remove error when table_find() an internal node
+2. remove check when num_cells >= leaf node's max cells
+3. we need void leaf_node_split_and_insert(cursor, key, Row *value). It should
+    - get a new page
+    - init it as a leaf node
+    - move the upper half into the new node.
+    - update the how many cells in old and new node
+4. if the old leaf is a leaf, we will create a new node
+5. so we need create_new_root(table, new_node_num). guide:
+
+Let N be the root node. First allocate two nodes, say L and R. Move lower half
+of N into L and the upper half into R. Now N is empty. Add 〈L, K,R〉 in N, where
+K is the max key in L. Page N remains the root. Note that the depth of the tree
+has increased by one, but the new tree remains height balanced without violating
+any B+-tree property.
+
+So basically
+- we have root (store left) and right (stores right)
+- just malloc the left and write our root to it (but toggle the "is_root" back to false)
+- connect them
+
+6. internal node-only header format
+- num_keys (all keys it has)
+- right_child  (page number of rightmost child)
+- total header size of internal node
+7. internal node body format: array of cells. Each cell has
+- child (pointer to a child node)
+- key (see the child above? yeah, it's the maximum key of that child)
+* so basically it has n (key + child) and + 1 child (right most in the header) *
+
+Note here that only 1 internal node can hold 510 keys and 511 child
+that means it can cover 500GB with just 4 disk fetches. That's the reason why B+ Tree
+is the best for DBMS: log(n) everywhere + low fetch time.
+8. method for internal node
+    - num_keys(node)
+    - right_child(node)
+    - cell(node, cell_num)
+    - child(node, cell_num)
+    - key(node, cell_num)
+9. define uint32 get_node_max_key(anynode)
+
+
+we can update serialize_row() to write key + value instead of just value?
