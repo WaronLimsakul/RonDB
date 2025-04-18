@@ -89,10 +89,18 @@ ExecuteResult execute_insert(Table *table, Row *row) {
         return EXECUTE_TABLE_FULL;
     }
 
-    Cursor *end_cursor = table_end(table);
-    leaf_node_insert(end_cursor, row->id, row);
+    uint32_t key_to_insert = row->id;
+    Cursor *cursor = table_find(table, key_to_insert);
+    uint32_t key_at_node = leaf_node_key(node);
 
-    free(end_cursor);
+    // catch duplicate key
+    if (!cursor->end_of_table && key_to_insert == key_at_node) {
+        return EXECUTE_DUPLICATE_KEY;
+    }
+
+    leaf_node_insert(cursor, key_to_insert, row);
+
+    free(cursor);
 
     printf("insert 1\n");
     return EXECUTE_SUCCESS;

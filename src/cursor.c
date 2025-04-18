@@ -18,20 +18,18 @@ Cursor *table_start(Table *table) {
     return cursor;
 }
 
-Cursor *table_end(Table *table) {
+Cursor *table_find(Table *table, uint32_t key) {
     assert(table);
 
-    Cursor *cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-
-    // IDK why we use the root page. I thought we need last page in the table
-    cursor->page_num = table->root_page_num;
-
-    void *last_page = pager_get_page(table->pager, cursor->page_num);
-    cursor->cell_num = *leaf_node_num_cells(last_page);
-    cursor->end_of_table = true;
-
-    return cursor;
+    void *root_node = pager_get_page(table->pager, table->root_page_num);
+    switch (node_type(root_node)) {
+        case LEAF_NODE:
+            return leaf_node_find(table, table->root_page_num, key);
+        case INTERNAL_NODE:
+            printf("waiting for internal node implementation\n");
+            return NULL;
+    }
+    return NULL;
 }
 
 // get pointer to a cell cursor point to.

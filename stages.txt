@@ -133,6 +133,11 @@ step 8.6
         - 2 : 2
     - so 0-index : in
 
-Debug
-1. insert get empty name + email in row except the last one
-2. .constants doesn't return like we expect
+step 9
+1. update execute_insert() to find the key (id) in table and insert there
+2. delete table_end()
+3. we need cursor table_find(table, key) to get cursor at that part
+    - should just check if the root is leaf or internal and execute when it's leaf
+4. we need cursor leaf_node_find(table, page_num, key) (binary search)
+
+5. not not sure if we need return node type of just pointer to it is enough
