@@ -5,6 +5,8 @@
 #include "table.h"
 #include "config.h"
 
+// cursor should be used to poitn to leaf node only
+
 typedef struct {
     Table *table;
     uint32_t page_num;

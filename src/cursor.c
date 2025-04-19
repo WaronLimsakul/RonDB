@@ -4,21 +4,6 @@
 
 #include "b-tree.h"
 
-Cursor *table_start(Table *table) {
-    assert(table);
-
-    Cursor *cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->page_num = table->root_page_num;
-    cursor->cell_num = 0;
-
-    void *root_node = pager_get_page(table->pager, cursor->page_num);
-    uint32_t num_cells = *leaf_node_num_cells(root_node); // but root is not leaf no?
-    cursor->end_of_table = (num_cells == 0);
-
-    return cursor;
-}
-
 Cursor *table_find(Table *table, uint32_t key) {
     assert(table);
 
@@ -31,6 +16,17 @@ Cursor *table_find(Table *table, uint32_t key) {
     }
     return NULL;
 }
+
+Cursor *table_start(Table *table) {
+    assert(table);
+    // find key = 0 (even if not exist, we still get the most left node)
+    Cursor *cursor = table_find(table, 0);
+
+    // don't need to set end_of_table
+
+    return cursor;
+}
+
 
 // get pointer to a cell cursor point to.
 void *cursor_value(Cursor *cursor) {
@@ -46,14 +42,17 @@ void cursor_advance(Cursor *cursor) {
     assert(cursor->table);
     assert(cursor->cell_num <= LEAF_NODE_MAX_CELLS); // can be at the end but not more
 
-    void *root_node = pager_get_page(cursor->table->pager, cursor->table->root_page_num);
+    void *node = pager_get_page(cursor->table->pager, cursor->page_num);
 
-    uint32_t num_cells = *leaf_node_num_cells(root_node);
-    if (cursor->cell_num < num_cells) {
+    uint32_t num_cells = *leaf_node_num_cells(node);
+    if (cursor->cell_num < num_cells - 1) {
         cursor->cell_num ++;
-    }
 
-    if (cursor->cell_num == num_cells) {
+        // the 0 page_num is default (no next)
+    } else if (*leaf_node_next_leaf(node) != 0) {
+        cursor->page_num = *leaf_node_next_leaf(node);
+        cursor->cell_num = 0;
+    } else {
         cursor->end_of_table = true;
     }
 }

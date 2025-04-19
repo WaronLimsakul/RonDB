@@ -206,10 +206,28 @@ Tree:
     - 14
 (number in bullet is key in the leaf)
 
-step 11:
+step 11: recursively find a place to insert with internal node
 1. we need Cursor *internal_node_find(table, page_num, key) to find a
     - binary search for in the level to find target child
     - if child is internal, recur
     - if leaf, just return leaf_node_find
 2. replace the exit() in table_find with internal_node_find() instead
 3. rewrite some tests
+
+step 12: scanning entire b-tree (fix select)
+1. add test to test when split and select
+2. rewrite table_start(table) this function shouldn't assume that root is leaf
+    - use table_find() to find key 0 to get left-most. (even if it doesn't
+    exist, we still get the leftmost because we use binary search range)
+3. we need to be able to jump to the next leaf when traversing in "select"
+    - we need next_leaf in leaf header: page_num of next leaf
+        - add the const size
+        - add method to access
+        - default next_leaf to 0 when init new leaf
+        - update the next_leaf when split leaf
+    - update the constants test
+        - leaf node header should be +4 bytes now
+        - space for cells will be -4 bytes
+        - (so lucky that the max cells is still the same)
+4. when advance cursor (we assume that the cursor point to leaf node)
+    - we can just jump to the next node (check first)

@@ -21,8 +21,11 @@ const uint32_t COMMON_NODE_HEADER_SIZE =
 // additional leaf node header
 const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
 const uint32_t LEAF_NODE_NUM_CELLS_OFFSET = COMMON_NODE_HEADER_SIZE;
+const uint32_t LEAF_NODE_NEXT_LEAF_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_NEXT_LEAF_OFFSET =
+    LEAF_NODE_NUM_CELLS_SIZE + LEAF_NODE_NUM_CELLS_OFFSET;
 const uint32_t LEAF_NODE_HEADER_SIZE =
-    COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE;
+    COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE + LEAF_NODE_NEXT_LEAF_SIZE;
 
 // leaf node body const
 const uint32_t LEAF_NODE_KEY_SIZE = sizeof(uint32_t);
@@ -89,6 +92,11 @@ int32_t* leaf_node_num_cells(void *node) {
     return node + LEAF_NODE_NUM_CELLS_OFFSET;
 }
 
+int32_t *leaf_node_next_leaf(void *node) {
+    assert(node);
+    return node + LEAF_NODE_NEXT_LEAF_OFFSET;
+}
+
 void *leaf_node_cell(void *node, int32_t cell_num) {
     assert(node);
     return node + LEAF_NODE_HEADER_SIZE + (cell_num * LEAF_NODE_CELL_SIZE);
@@ -107,6 +115,7 @@ void *leaf_node_value(void *node, int32_t cell_num) {
 void init_leaf_node(void *node) {
     node_set_type(node, LEAF_NODE);
     *leaf_node_num_cells(node) = 0;
+    *leaf_node_next_leaf(node) = 0; // default to 0 (which should be root)
     node_set_is_root(node, false);
 }
 
@@ -248,6 +257,8 @@ void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
     int new_page_num = pager_get_unused_page(pager);
     void *new_node = pager_get_page(pager, new_page_num);
     init_leaf_node(new_node);
+    *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
+    *leaf_node_next_leaf(old_node) = new_page_num;
 
     uint32_t target_idx = cursor->cell_num;
     for (int32_t cur = LEAF_NODE_MAX_CELLS; cur >= 0; cur--) {
