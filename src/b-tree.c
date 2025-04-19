@@ -278,7 +278,7 @@ void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
     if (node_is_root(old_node)) {
         return create_new_root(cursor->table, new_page_num);
     } else {
-        printf("waiting for spliting internal node implementation\n");
+        printf("need to implement updating parent after split");
         exit(EXIT_FAILURE);
     }
 }
