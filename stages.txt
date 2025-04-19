@@ -163,6 +163,14 @@ So basically
 - just malloc the left and write our root to it (but toggle the "is_root" back to false)
 - connect them
 
+Before split (one-node B+ tree):
+[5: "a", 12: "b"]
+
+After inserting 1: "c":
+        [ *, 5, * ]
+         /      \
+[1: "c", 5: "a"]  [12: "b"]
+
 6. internal node-only header format
 - num_keys (all keys it has)
 - right_child  (page number of rightmost child)
@@ -231,3 +239,21 @@ step 12: scanning entire b-tree (fix select)
         - (so lucky that the max cells is still the same)
 4. when advance cursor (we assume that the cursor point to leaf node)
     - we can just jump to the next node (check first)
+
+step 13: update parent after split
+After (non-root) leaf split, we have to fix the parent like this:
+
+Before split:
+       [ *, 5, * ]
+        /       \
+[1: "c", 5: "a"]  [12: "b"]
+
+After inserting 3:"d" and splitting:
+     [ *, 3, *, 5, * ]
+      /    |     \
+[1: "c", 3: "d"] [5: "a"] [12: "b"]
+
+1. Update the old key in the parent to be the maximum key in the left child
+2. Add a new child pointer / key pair after the updated key
+    - The new pointer points to the new child node
+    - The new key is the maximum key in the new child node (“5”)
