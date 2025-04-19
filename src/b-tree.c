@@ -304,3 +304,39 @@ void create_new_root(Table *table, uint32_t right_page_num) {
     *internal_node_child(root, 0) = new_page_num; // first child is the left
     *internal_node_key(root, 0) = get_node_max_key(left_node); // key is the max of left
 }
+
+static bool high_key_internal(void *node, uint32_t key_num, uint32_t target) {
+    return *internal_node_key(node, key_num) >= target;
+}
+
+Cursor *internal_node_find(Table *table, uint32_t page_num, uint32_t key) {
+    assert(table);
+    void *node = pager_get_page(table->pager, page_num);
+    uint32_t num_keys = *internal_node_num_keys(node);
+
+    uint32_t low = 0;
+    uint32_t high = num_keys;
+
+    while (low < high) {
+        uint32_t mid = low + ((high - low) / 2);
+        if (high_key_internal(node, mid, key)) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+
+    uint32_t target_idx = low;
+    uint32_t child_page_num = *internal_node_child(node, target_idx);
+    void *target_child = pager_get_page(table->pager, child_page_num);
+
+    switch (node_type(target_child)) {
+        case INTERNAL_NODE:
+            return internal_node_find(table, child_page_num, key);
+        case LEAF_NODE:
+            return leaf_node_find(table, child_page_num, key);
+    }
+    printf("error: node has no type\n");
+    exit(EXIT_FAILURE);
+    return NULL;
+}

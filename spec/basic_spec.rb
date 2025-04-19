@@ -176,7 +176,8 @@ describe 'database' do
       "    - 12",
       "    - 13",
       "    - 14",
-      "RonDB >need to implement searching an internal node",
+      "RonDB >insert 1",
+      "RonDB >exiting! Bye bye",
     ])
   end
 end
