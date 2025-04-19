@@ -243,17 +243,27 @@ step 12: scanning entire b-tree (fix select)
 step 13: update parent after split
 After (non-root) leaf split, we have to fix the parent like this:
 
-Before split:
-       [ *, 5, * ]
-        /       \
-[1: "c", 5: "a"]  [12: "b"]
+    Before split:
+        [ *, 5, * ]
+         /       \
+    [1:"c",5:"a"] [12: "b"]
 
-After inserting 3:"d" and splitting:
-     [ *, 3, *, 5, * ]
-      /    |     \
-[1: "c", 3: "d"] [5: "a"] [12: "b"]
+    After inserting 3:"d" and splitting:
+        [ *, 3, *, 5, * ]
+        /        \     \
+[1:"c",3:"d"] [5:"a"] [12: "b"]
 
-1. Update the old key in the parent to be the maximum key in the left child
-2. Add a new child pointer / key pair after the updated key
-    - The new pointer points to the new child node
-    - The new key is the maximum key in the new child node (“5”)
+    1. Update the old key in the parent to be the maximum key in the left child ("3")
+    2. Add a new child pointer / key pair after the updated key
+        - The new pointer points to the new child node
+        - The new key is the maximum key in the new child node (“5”)
+
+1. so we need these in the step 1
+    - node_parent() to access node's parent.
+    - set parent for new node when split
+    - in the function that we create new root, just update both children to point to the root
+    - update_internal_node_key(node, old_key, new_key) to update the parent
+        - We can add internal_node_find_child(node, key) to help (binary search like always)
+
+2. we need internal_node_insert(table, internal_page_num, new_page_num)
+3. use all we define to update split leaf function
