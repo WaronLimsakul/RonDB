@@ -17,12 +17,34 @@ static void print_constants() {
     printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
 }
 
-static void print_leaf_node(void *node) {
-    uint32_t num_cells = *leaf_node_num_cells(node);
-    printf("leaf (size %d)\n", num_cells);
-    for (int i = 0; i < num_cells; i++) {
-        uint32_t key = *leaf_node_key(node, i);
-        printf("  - %d : %d\n", i, key);
+static void indent(uint32_t level) {
+    for (int i = 0; i < level; i++) {
+        printf("  ");
+    }
+}
+
+static void print_tree(Pager *pager, uint32_t page_num, uint32_t level) {
+    void *node = pager_get_page(pager, page_num);
+    indent(level);
+    switch (node_type(node)) {
+        case INTERNAL_NODE:
+            uint32_t num_keys = *internal_node_num_keys(node);
+            printf("- internal (size %u)\n", num_keys);
+            for (uint32_t i = 0; i < num_keys; i++) {
+                print_tree(pager, *internal_node_child(node, i), level + 1);
+                indent(level + 1);
+                printf("- key %d\n", *internal_node_key(node, i));
+            }
+            print_tree(pager, *internal_node_right_child(node), level + 1);
+            break;
+        case LEAF_NODE:
+            uint32_t num_cells = *leaf_node_num_cells(node);
+            printf("- leaf (size %d)\n", num_cells);
+            for (uint32_t i = 0; i < num_cells; i ++) {
+                indent(level + 1);
+                printf("- %d\n", *leaf_node_key(node, i));
+            }
+            break;
     }
 }
 
@@ -44,7 +66,8 @@ MetaCommandResult execute_meta_command(InputBuffer* input_buffer, Table *table) 
         print_constants();
     } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
         printf("Tree:\n");
-        print_leaf_node(pager_get_page(table->pager, 0));
+        print_tree(table->pager, table->root_page_num, 0);
+        // print_leaf_node(pager_get_page(table->pager, 0));
     } else {
         return META_COMMAND_UNRECOGNIZED;
     }
@@ -88,11 +111,13 @@ ExecuteResult execute_insert(Table *table, Row *row) {
 
     uint32_t key_to_insert = row->id;
     Cursor *cursor = table_find(table, key_to_insert);
-    uint32_t key_at_node = *leaf_node_key(node, cursor->cell_num);
 
     // catch duplicate key
-    if (!cursor->end_of_table && key_to_insert == key_at_node) {
-        return EXECUTE_DUPLICATE_KEY;
+    if (cursor->cell_num < num_cells) {
+        uint32_t key_at_node = *leaf_node_key(node, cursor->cell_num);
+        if (key_at_node == key_to_insert) {
+            return EXECUTE_DUPLICATE_KEY;
+        }
     }
 
     leaf_node_insert(cursor, key_to_insert, row);

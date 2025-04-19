@@ -23,5 +23,8 @@ run:
 clean:
 	rm -rf $(OBJDIR) $(TARGET) *.db
 
+clean_db:
+	rm -rf *.db
+
 test:
 	make && bundle exec rspec

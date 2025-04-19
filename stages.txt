@@ -141,7 +141,7 @@ step 9
 4. we need cursor leaf_node_find(table, page_num, key) (binary search)
 5. not not sure if we need return node type of just pointer to it is enough
 
-step 10
+step 10.1
 1. remove error when table_find() an internal node
 2. remove check when num_cells >= leaf node's max cells
 3. we need void leaf_node_split_and_insert(cursor, key, Row *value). It should
@@ -183,5 +183,27 @@ is the best for DBMS: log(n) everywhere + low fetch time.
     - key(node, cell_num)
 9. define uint32 get_node_max_key(anynode)
 
+step 10.2
+1. update .btree to print something like this:
+Tree:
+- internal (size 1)
+  - leaf (size 7)
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+  - key 7
+  - leaf (size 7)
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+(number in bullet is key in the leaf)
 
-we can update serialize_row() to write key + value instead of just value?
+Debug that the print_node

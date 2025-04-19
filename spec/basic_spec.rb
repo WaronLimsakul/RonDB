@@ -31,14 +31,14 @@ describe 'database' do
     ])
   end
 
-  it 'prints error message when table is full' do
-    script = (1..1487).map do |i|
-      "insert #{i} user#{i} person#{i}@test.com"
-    end
-    script << ".exit"
-    result = run_script(script)
-    expect(result[-2]).to eq('RonDB >error: table is full')
-  end
+  # it 'prints error message when table is full' do
+  #   script = (1..1487).map do |i|
+  #     "insert #{i} user#{i} person#{i}@test.com"
+  #   end
+  #   script << ".exit"
+  #   result = run_script(script)
+  #   expect(result[-2]).to eq('RonDB >error: table is full')
+  # end
 
   it 'allows inserting maximum length strings' do
     long_name = "a"*32
@@ -122,10 +122,10 @@ describe 'database' do
       "RonDB >insert 1",
       "RonDB >insert 1",
       "RonDB >Tree:",
-      "leaf (size 3)",
-      "  - 0 : 1",
-      "  - 1 : 2",
-      "  - 2 : 3",
+      "- leaf (size 3)",
+      "  - 1",
+      "  - 2",
+      "  - 3",
       "RonDB >exiting! Bye bye"
     ])
   end
@@ -144,6 +144,39 @@ describe 'database' do
       "RonDB >error: duplicate key",
       "RonDB >id: 1 | name: ron | email: ron@test.com",
       "RonDB >exiting! Bye bye"
+    ])
+  end
+
+  it 'allows printing out the structure of 2-leaf-nodes btree' do
+    script = (1..14).map do |i|
+      "insert #{i} ron#{i} ron#{i}@test.com"
+    end
+    script << ".btree"
+    script << "insert 15 ron15 ron15@test.com"
+    script << ".exit"
+    result = run_script(script)
+
+    expect(result[14...(result.length)]).to match_array([
+      "RonDB >Tree:",
+      "- internal (size 1)",
+      "  - leaf (size 7)",
+      "    - 1",
+      "    - 2",
+      "    - 3",
+      "    - 4",
+      "    - 5",
+      "    - 6",
+      "    - 7",
+      "  - key 7",
+      "  - leaf (size 7)",
+      "    - 8",
+      "    - 9",
+      "    - 10",
+      "    - 11",
+      "    - 12",
+      "    - 13",
+      "    - 14",
+      "RonDB >need to implement searching an internal node",
     ])
   end
 end

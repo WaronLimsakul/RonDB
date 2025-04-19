@@ -130,7 +130,7 @@ void *internal_node_cell(void *node, uint32_t cell_num) {
 // child is at the front of the cell;
 uint32_t *internal_node_child(void *node, uint32_t child_num) {
     // right most child case
-    if (child_num == internal_node_num_keys(node)) {
+    if (child_num == *internal_node_num_keys(node)) {
         return internal_node_right_child(node);
     }
     // inside cell case
@@ -149,7 +149,7 @@ void init_internal_node(void *node) {
     node_set_is_root(node, false);
 }
 
-uint32 get_node_max_key(void *node) {
+uint32_t get_node_max_key(void *node) {
     assert(node);
 
     switch (node_type(node)) {
@@ -170,8 +170,8 @@ void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value) {
     void *node = pager_get_page(cursor->table->pager, cursor->page_num);
     uint32_t num_cells = *leaf_node_num_cells(node);
     if (num_cells >= LEAF_NODE_MAX_CELLS) {
-        printf("the page number %d is full\n", cursor->page_num);
-        exit(EXIT_FAILURE);
+        leaf_node_split_and_insert(cursor, key, value);
+        return;
     }
 
     // if we need to insert in betwee, shift to right to make room
@@ -237,16 +237,20 @@ plan to split
     - if current < target: write old[i] because it's not shifted
 */
 void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
+    assert(cursor);
+    assert(value);
 
     Pager *pager = cursor->table->pager;
+    assert(pager);
     void *old_node = pager_get_page(pager, cursor->page_num);
+    assert(old_node);
 
     int new_page_num = pager_get_unused_page(pager);
     void *new_node = pager_get_page(pager, new_page_num);
     init_leaf_node(new_node);
 
     uint32_t target_idx = cursor->cell_num;
-    for (int cur = LEAF_NODE_MAX_CELLS; cur > -1; cur--) {
+    for (int32_t cur = LEAF_NODE_MAX_CELLS; cur >= 0; cur--) {
         void *dest_node;
         if (cur < LEAF_NODE_SPLIT_LEFT_CELLS) {
             dest_node = old_node;
@@ -254,13 +258,14 @@ void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
             dest_node = new_node;
         }
 
-        int cur_at_dest = cur % LEAF_NODE_SPLIT_LEFT_CELLS;
+        uint32_t cur_at_dest = cur % LEAF_NODE_SPLIT_LEFT_CELLS;
         void *destination = leaf_node_cell(dest_node, cur_at_dest);
+        assert(destination);
 
         if (cur == target_idx) {
             *leaf_node_key(dest_node, cur_at_dest) = key;
             serialize_row(leaf_node_value(dest_node, cur_at_dest), value);
-        } else if (current > target_idx) {
+        } else if (cur > target_idx) {
             memcpy(destination, leaf_node_cell(old_node, cur - 1), LEAF_NODE_CELL_SIZE);
         } else {
             memcpy(destination, leaf_node_cell(old_node, cur), LEAF_NODE_CELL_SIZE);
@@ -271,7 +276,7 @@ void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
     *leaf_node_num_cells(new_node) = LEAF_NODE_SPLIT_RIGHT_CELLS;
 
     if (node_is_root(old_node)) {
-        return creat_new_root(cursor->table, new_page_num);
+        return create_new_root(cursor->table, new_page_num);
     } else {
         printf("waiting for spliting internal node implementation\n");
         exit(EXIT_FAILURE);
@@ -284,7 +289,7 @@ void create_new_root(Table *table, uint32_t right_page_num) {
 
     Pager *pager = table->pager;
     void *root = pager_get_page(pager, table->root_page_num);
-    void *right_node = pager_get_page(pager, right_page_num);
+    // void *right_node = pager_get_page(pager, right_page_num);
 
     uint32_t new_page_num = pager_get_unused_page(pager);
     void *left_node = pager_get_page(pager, new_page_num);

@@ -45,3 +45,14 @@ Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key);
 NodeType node_type(void *node);
 void set_node_type(void *node, NodeType type);
 void node_set_is_root(void *node, bool is_root);
+void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value);
+void create_new_root(Table *table, uint32_t right_page_num);
+
+uint32_t *internal_node_num_keys(void *node);
+uint32_t *internal_node_right_child(void *node);
+void *internal_node_cell(void *node, uint32_t cell_num);
+// child is at the front of the cell;
+uint32_t *internal_node_child(void *node, uint32_t child_num);
+uint32_t *internal_node_key(void *node, uint32_t cell_num);
+void init_internal_node(void *node);
+uint32_t get_node_max_key(void *node);
