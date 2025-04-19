@@ -206,4 +206,10 @@ Tree:
     - 14
 (number in bullet is key in the leaf)
 
-Debug that the print_node
+step 11:
+1. we need Cursor *internal_node_find(table, page_num, key) to find a
+    - binary search for in the level to find target child
+    - if child is internal, recur
+    - if leaf, just return leaf_node_find
+2. replace the exit() in table_find with internal_node_find() instead
+3. rewrite some tests
