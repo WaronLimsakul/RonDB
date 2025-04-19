@@ -61,21 +61,27 @@ const uint32_t INTERNAL_NODE_CELL_SIZE =
 
 // only check the first 8 bits
 NodeType node_type(void *node) {
+    assert(node);
     uint8_t value = *(uint8_t*)(node + NODE_TYPE_OFFSET);
     return (NodeType)value;
 }
 
+// only change the first 8 bits
+void node_set_type(void *node, NodeType type) {
+    assert(node);
+    *(uint8_t*)(node + NODE_TYPE_OFFSET) = (uint8_t)type;
+}
+
 bool node_is_root(void *node) {
-    return (bool)(node + IS_ROOT_OFFSET);
+    assert(node);
+    // remember to cast to 8 bits first, so we can pick that 8 bits
+    uint8_t val = *(uint8_t *)(node + IS_ROOT_OFFSET);
+    return (bool)val;
 }
 
 void node_set_is_root(void *node, bool is_root) {
-    *(bool *)(node + IS_ROOT_OFFSET) = is_root;
-}
-
-// only change the first 8 bits
-void set_node_type(void *node, NodeType type) {
-    *(uint8_t*)(node + NODE_TYPE_OFFSET) = (uint8_t)type;
+    assert(node);
+    *(uint8_t *)(node + IS_ROOT_OFFSET) = (uint8_t)is_root;
 }
 
 int32_t* leaf_node_num_cells(void *node) {
@@ -99,8 +105,9 @@ void *leaf_node_value(void *node, int32_t cell_num) {
 }
 
 void init_leaf_node(void *node) {
-    set_node_type(node, LEAF_NODE);
+    node_set_type(node, LEAF_NODE);
     *leaf_node_num_cells(node) = 0;
+    node_set_is_root(node, false);
 }
 
 uint32_t *internal_node_num_keys(void *node) {
@@ -108,7 +115,7 @@ uint32_t *internal_node_num_keys(void *node) {
     return node + INTERNAL_NODE_NUM_KEYS_OFFSET;
 }
 
-void *internal_node_right_child(void *node) {
+uint32_t *internal_node_right_child(void *node) {
     assert(node);
     return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
 }
@@ -121,12 +128,39 @@ void *internal_node_cell(void *node, uint32_t cell_num) {
 }
 
 // child is at the front of the cell;
-void *internal_node_child(void *node, uint32_t cell_num) {
-    return internal_node_cell(node, cell_num);
+uint32_t *internal_node_child(void *node, uint32_t child_num) {
+    // right most child case
+    if (child_num == internal_node_num_keys(node)) {
+        return internal_node_right_child(node);
+    }
+    // inside cell case
+    return internal_node_cell(node, child_num);
 }
 
-void *internal_node_key(void *node, uint32_t cell_num) {
+uint32_t *internal_node_key(void *node, uint32_t cell_num) {
     return internal_node_cell(node, cell_num) + INTERNAL_NODE_CHILD_SIZE;
+}
+
+void init_internal_node(void *node) {
+    assert(node);
+
+    node_set_type(node, INTERNAL_NODE);
+    *internal_node_num_keys(node) = 0;
+    node_set_is_root(node, false);
+}
+
+uint32 get_node_max_key(void *node) {
+    assert(node);
+
+    switch (node_type(node)) {
+        case INTERNAL_NODE:
+            return *internal_node_key(node, *internal_node_num_keys(node) - 1);
+        case LEAF_NODE:
+            return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
+        default:
+            printf("error: node has no type\n");
+            exit(EXIT_FAILURE);
+    }
 }
 
 void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value) {
@@ -244,6 +278,7 @@ void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
     }
 }
 
+// only happen when split leaf that is originally root
 void create_new_root(Table *table, uint32_t right_page_num) {
     assert(table);
 
@@ -257,6 +292,10 @@ void create_new_root(Table *table, uint32_t right_page_num) {
     memcpy(left_node, root, PAGE_SIZE);
     node_set_is_root(left_node, false);
 
+    init_internal_node(root); // root become internal node
     node_set_is_root(root, true);
-
+    *internal_node_num_keys(root) = 1; // when create root, we split to 2 nodes
+    *internal_node_right_child(root) = right_page_num; // rightmost is the right
+    *internal_node_child(root, 0) = new_page_num; // first child is the left
+    *internal_node_key(root, 0) = get_node_max_key(left_node); // key is the max of left
 }

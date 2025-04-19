@@ -27,6 +27,7 @@ Table *db_open(char *file_name) {
     if (pager->num_pages == 0) {
         void *node = pager_get_page(table->pager, 0);
         init_leaf_node(node);
+        node_set_is_root(node, true);
     }
     return table;
 }

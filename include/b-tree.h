@@ -44,3 +44,4 @@ void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value);
 Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key);
 NodeType node_type(void *node);
 void set_node_type(void *node, NodeType type);
+void node_set_is_root(void *node, bool is_root);
