@@ -266,4 +266,11 @@ After (non-root) leaf split, we have to fix the parent like this:
         - We can add internal_node_find_child(node, key) to help (binary search like always)
 
 2. we need internal_node_insert(table, internal_page_num, new_page_num)
+    - if internal node has no room left
+        - throw exit fail for now
+        - print "need to implement splitting internal node"
+    - check carefully if you have shift + insert OR add to the right
+        (replace right child and put the old one in the body)
 3. use all we define to update split leaf function
+4. define INTERNAL_NODE_MAX_CELLS = 3
+5. write test for that.

@@ -42,7 +42,7 @@ describe 'database' do
     script << ".exit"
     result = run_script(script)
     expect(result[-1]).to match(
-      "RonDB >need to implement updating parent after split"
+      "RonDB >need to implement splitting internal node"
     )
   end
 

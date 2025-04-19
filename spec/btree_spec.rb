@@ -131,4 +131,35 @@ describe 'b-tree db' do
 
     expect(result[15..result.length]).to match_array(expect_result)
   end
+
+  it 'prints structure of 4-node (1 root + 3 leafs) tree' do
+    script = (1..30).map do |i|
+      "insert #{i} ron#{i} ron#{i}@tes.com"
+    end
+    script.shuffle!()
+    script << ".btree"
+    script << ".exit"
+
+    result = run_script(script)
+    expect_result = [
+      "RonDB >- internal (size 3)",
+      "  - leaf (size 7)",
+      "    - 1", "    - 2", "    - 3", "    - 4",
+      "    - 5", "    - 6", "    - 7",
+      "  - key 1",
+      "  - leaf (size 8)",
+      "    - 8", "    - 9", "    - 10", "    - 11",
+      "    - 12", "    - 13", "    - 14", "    - 15",
+      "  - key 15",
+      "  - leaf (size 7)",
+      "    - 16", "    - 17", "    - 18", "    - 19",
+      "    - 20", "    - 21", "    - 22", "  - key 22",
+      "  - leaf (size 8)",
+      "    - 23", "    - 24", "    - 25", "    - 26",
+      "    - 27", "    - 28", "    - 29", "    - 30",
+      "RonDB >exiting! Bye bye",
+    ]
+
+    expect(result.last(2)).to match_array(expect_result)
+  end
 end

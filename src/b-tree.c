@@ -152,7 +152,7 @@ uint32_t *internal_node_child(void *node, uint32_t child_num) {
 }
 
 uint32_t *internal_node_key(void *node, uint32_t cell_num) {
-    return internal_node_cell(node, cell_num) + INTERNAL_NODE_CHILD_SIZE;
+    return (void *)internal_node_cell(node, cell_num) + INTERNAL_NODE_CHILD_SIZE;
 }
 
 void init_internal_node(void *node) {
