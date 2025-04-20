@@ -296,6 +296,7 @@ static void internal_node_insert(
     assert(child_page_num != INVALID_PAGE_NUM);
 
     Pager *pager = table->pager;
+
     void *parent_node = pager_get_page(pager, parent_page_num);
     void *child_node = pager_get_page(pager, child_page_num);
     uint32_t child_max_key = get_node_max_key(pager, child_node);
@@ -319,6 +320,10 @@ static void internal_node_insert(
     void *right_child = pager_get_page(pager, right_child_page_num);
     uint32_t right_child_max_key = get_node_max_key(pager, right_child);
 
+    // you need to find the target index before incrementing, why? because our
+    // function assume the original lenght of body. If we increment before
+    // finding function, we will get a place that shouldn't be inserted
+    uint32_t target_idx = internal_node_find_child(parent_node, child_max_key);
     // !!! important !!! you need to increment first before doing inserting logic
     // so that when write at original_num_keys position, we actually write at
     // the end of body and not the right most
@@ -332,8 +337,6 @@ static void internal_node_insert(
         // move the new child to replace old right child
         *internal_node_right_child(parent_node) = child_page_num;
     } else {
-        uint32_t target_idx = internal_node_find_child(parent_node, child_max_key);
-
         // shift to the right to give room for insert
         for (uint32_t pos = original_num_keys; pos > target_idx; pos--) {
             void *dest = internal_node_cell(parent_node, pos);
@@ -568,7 +571,7 @@ void internal_node_split_and_insert(
     *internal_node_right_child(old_node) = INVALID_PAGE_NUM;
 
     // move from the back of body until the middle to new_node
-    for (int i = INTERNAL_NODE_MAX_CELLS - 1; i > INTERNAL_NODE_MAX_CELLS / 2; i--) {
+    for (uint32_t i = INTERNAL_NODE_MAX_CELLS - 1; i > INTERNAL_NODE_MAX_CELLS / 2; i--) {
         cur_page_num = *internal_node_child(old_node, i);
         cur = pager_get_page(pager, cur_page_num);
 
@@ -579,10 +582,7 @@ void internal_node_split_and_insert(
     }
 
     // set new right child for old_node
-    uint32_t new_right_child_page = *internal_node_child(old_node, *old_num_keys - 1);
-    void *new_right_child = pager_get_page(pager, new_right_child_page);
-    *node_parent(new_right_child) = old_page_num;
-    *internal_node_right_child(old_node) = new_right_child_page;
+    *internal_node_right_child(old_node) = *internal_node_child(old_node, *old_num_keys - 1);
     (*old_num_keys)--;
 
     // insert the child
