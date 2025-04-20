@@ -270,6 +270,9 @@ static void internal_node_insert(
         printf("need to implement splitting internal node\n");
         exit(EXIT_FAILURE);
     }
+    // !!! important !!! you need to increment first before doing all the logic
+    // so that when write at original_num_keys position, we actually write at
+    // the end of body and not the right most
     *internal_node_num_keys(parent_node) = original_num_keys + 1;
 
     // prepare for check step 2
