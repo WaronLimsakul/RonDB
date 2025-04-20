@@ -61,6 +61,8 @@ const uint32_t INTERNAL_NODE_KEY_SIZE = sizeof(uint32_t);
 const uint32_t INTERNAL_NODE_CELL_SIZE =
     INTERNAL_NODE_CHILD_SIZE + INTERNAL_NODE_KEY_SIZE;
 
+// easy to test
+const uint32_t INTERNAL_NODE_MAX_CELLS = 3;
 
 // only check the first 8 bits
 NodeType node_type(void *node) {
@@ -136,13 +138,14 @@ uint32_t *internal_node_right_child(void *node) {
 
 void *internal_node_cell(void *node, uint32_t cell_num) {
     assert(node);
-    assert(cell_num < *internal_node_num_keys(node));
+    // assert(cell_num < *internal_node_num_keys(node)); I want to access the back sometimes
 
     return node + INTERNAL_NODE_HEADER_SIZE + (INTERNAL_NODE_CELL_SIZE * cell_num);
 }
 
 // child is at the front of the cell;
 uint32_t *internal_node_child(void *node, uint32_t child_num) {
+    assert(child_num <= *internal_node_num_keys(node));
     // right most child case
     if (child_num == *internal_node_num_keys(node)) {
         return internal_node_right_child(node);
@@ -244,6 +247,60 @@ static void update_internal_node_key(void *node, uint32_t old_key, uint32_t new_
     *internal_node_key(node, target_cell_num) = new_key;
 }
 
+// plan:
+// 1. check if the node is full
+// 2. check if I have to shift and write
+// or put right child at the back and replace the right child
+// 3. do the write
+// 4. increment num keys
+static void internal_node_insert(
+    Table *table,
+    uint32_t parent_page_num,
+    uint32_t child_page_num
+) {
+    assert(table);
+
+    Pager *pager = table->pager;
+    void *parent_node = pager_get_page(pager, parent_page_num);
+    void *child_node = pager_get_page(pager, child_page_num);
+
+    // 1. check if node is full
+    uint32_t original_num_keys = *internal_node_num_keys(parent_node);
+    if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
+        printf("need to implement splitting internal node\n");
+        exit(EXIT_FAILURE);
+    }
+    *internal_node_num_keys(parent_node) = original_num_keys + 1;
+
+    // prepare for check step 2
+    uint32_t child_max_key = get_node_max_key(child_node);
+
+    uint32_t right_child_page_num = *internal_node_right_child(parent_node);
+    void *right_child = pager_get_page(pager, right_child_page_num);
+    uint32_t right_child_max_key = get_node_max_key(right_child);
+
+    // 2. check if we shift or just add back
+    if (child_max_key > right_child_max_key) {
+        // move the old right child back to the end of body
+        *internal_node_child(parent_node, original_num_keys) = right_child_page_num;
+        *internal_node_key(parent_node, original_num_keys) = right_child_max_key;
+        // move the new child to replace old right child
+        *internal_node_right_child(parent_node) = child_page_num;
+    } else {
+        uint32_t target_idx = internal_node_find_child(parent_node, child_max_key);
+
+        // shift to the right to give room for insert
+        for (uint32_t pos = original_num_keys; pos > target_idx; pos--) {
+            void *dest = internal_node_cell(parent_node, pos);
+            void *src = internal_node_cell(parent_node, pos - 1);
+            memcpy(dest, src, INTERNAL_NODE_CELL_SIZE);
+        }
+
+        *internal_node_child(parent_node, target_idx) = child_page_num;
+        *internal_node_key(parent_node, target_idx) = child_max_key;
+    }
+}
+
 // leaf node must be full first to call this.
 // and why do we need the key?
 /*
@@ -318,6 +375,7 @@ void leaf_node_split_and_insert(Cursor *cursor, uint32_t key, Row *value) {
 
         uint32_t new_key = get_node_max_key(old_node);
         update_internal_node_key(parent_node, old_key, new_key);
+        internal_node_insert(cursor->table, parent_page_num, new_page_num);
     }
 }
 
@@ -353,7 +411,7 @@ static bool high_key_internal(void *node, uint32_t key_num, uint32_t target) {
 uint32_t internal_node_find_child(void *node, uint32_t key) {
     assert(node);
 
-    uint32_t num_keys = internal_node_num_keys(node);
+    uint32_t num_keys = *internal_node_num_keys(node);
 
     uint32_t low = 0;
     uint32_t high = num_keys;
