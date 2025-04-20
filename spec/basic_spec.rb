@@ -43,7 +43,7 @@ describe 'database' do
     result = run_script(script)
     expect(result.last(2)).to match_array([
       "RonDB >insert 1",
-      "RonDB >exiting! Byebye",
+      "RonDB >exiting! Bye bye",
     ])
   end
 

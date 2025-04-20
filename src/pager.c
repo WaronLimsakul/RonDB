@@ -40,16 +40,19 @@ Pager *pager_open(char *file_name) {
 }
 
 // get page pointer in cache
-void *pager_get_page(Pager *pager, int page_num) {
-    assert(pager);
-    assert(page_num < TABLE_MAX_PAGES);
+void *pager_get_page(Pager *pager, uint32_t page_num) {
+    if (page_num > TABLE_MAX_PAGES) {
+        printf("Tried to fetch page number out of bounds. %d > %d\n", page_num,
+               TABLE_MAX_PAGES);
+        exit(EXIT_FAILURE);
+    }
 
     // cache miss: allocate a page cache + load from file
     if (pager->pages[page_num] == NULL) {
         void *new_page = malloc(PAGE_SIZE);
 
         // don't need to round up anymore, we store whole pages
-        int num_pages = pager->file_length / PAGE_SIZE;
+        uint32_t num_pages = pager->file_length / PAGE_SIZE;
 
         if (page_num <= num_pages) {
             // go the start of the page
@@ -65,7 +68,7 @@ void *pager_get_page(Pager *pager, int page_num) {
 
         pager->pages[page_num] = new_page;
 
-        // ?
+        // when we get malloc new page that disk doesn't have, we will update
         if (page_num >= pager->num_pages) {
             pager->num_pages = page_num + 1;
         }
@@ -93,11 +96,6 @@ void pager_flush(Pager* pager, int page_num) {
     }
 }
 
-int pager_get_unused_page(Pager *pager) {
-    int num_pages = pager->num_pages;
-    if (num_pages == TABLE_MAX_PAGES) {
-        return -1;
-    } else {
-        return (int)num_pages;
-    }
+uint32_t pager_get_unused_page(Pager *pager) {
+    return pager->num_pages;
 }

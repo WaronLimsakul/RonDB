@@ -75,7 +75,8 @@ NodeType node_type(void *node) {
 // only change the first 8 bits
 void node_set_type(void *node, NodeType type) {
     assert(node);
-    *(uint8_t*)(node + NODE_TYPE_OFFSET) = (uint8_t)type;
+    uint8_t value = type;
+    *((uint8_t*)(node + NODE_TYPE_OFFSET)) = value;
 }
 
 bool node_is_root(void *node) {
@@ -121,7 +122,6 @@ void *leaf_node_value(void *node, int32_t cell_num) {
 }
 
 void init_leaf_node(void *node) {
-    memset(node, 0, PAGE_SIZE);
     node_set_type(node, LEAF_NODE);
     node_set_is_root(node, false);
     *leaf_node_num_cells(node) = 0;
@@ -185,7 +185,6 @@ uint32_t *internal_node_key(void *node, uint32_t cell_num) {
 void init_internal_node(void *node) {
     assert(node);
 
-    memset(node, 0, PAGE_SIZE);
     node_set_type(node, INTERNAL_NODE);
     *internal_node_num_keys(node) = 0;
     node_set_is_root(node, false);
