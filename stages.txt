@@ -291,6 +291,9 @@ step 14: split the internal node
         - Insert the child into the sibling node
         - Update the child’s parent value to point to the sibling node
         - Decrement the old node’s number of keys
+    - move the middle key (now back of the body) of the old node to the right most (decrement num_keys ofc)
+    - insert child we want depends on its max_key
+    - if we are not dealing with root, then we insert the new root to parent of old node
 2. in internal_node_insert(), we now have to check that internal node is empty
 or not before inserting. the first thing to fill is right child.
 3. when init internal node, set right child to be INVALID_PAGE_NUM
