@@ -274,3 +274,20 @@ After (non-root) leaf split, we have to fix the parent like this:
 3. use all we define to update split leaf function
 4. define INTERNAL_NODE_MAX_CELLS = 3
 5. write test for that.
+
+step 14: split the internal node
+(ref img: https://cstack.github.io/db_tutorial/assets/images/splitting-internal-node.png)
+    1. Create a sibling node to store (n-1)/2 of the original node’s keys
+    2. Move these keys from the original node to the sibling node
+    3. Update the original node’s key in the parent to reflect its new max key after splitting
+    4. Insert the sibling node into the parent (could result in the parent also being split)
+0. rewrite get_node_max_key(pager, node) : walk down to the right
+1. we need internal_node_split_and_insert(table, parent_page_num, child_page_num)
+    - store old_page_num, old_page_max
+    - store
+2. in internal_node_insert(), we now have to check that internal node is empty
+or not before inserting. the first thing to fill is right child.
+3. when init internal node, set right child to be INVALID_PAGE_NUM
+4. guard internal_node_child() to not access INVALID_PAGE_NUM child
+5. guard print_tree() to not access INVALID_PAGE_NUM node
+6. update test

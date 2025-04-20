@@ -7,6 +7,7 @@
 #include "vm.h"
 #include "cursor.h"
 #include "b-tree.h"
+#include "config.h"
 
 static void print_constants() {
     printf("ROW_SIZE: %d\n", ROW_SIZE);
@@ -24,6 +25,11 @@ static void indent(uint32_t level) {
 }
 
 static void print_tree(Pager *pager, uint32_t page_num, uint32_t level) {
+    if (page_num == INVALID_PAGE_NUM) {
+        // might comment the print
+        printf("tried to print page_num: %u in level: %u but invalid\n", page_num, level);
+        return;
+    }
     void *node = pager_get_page(pager, page_num);
     indent(level);
     switch (node_type(node)) {

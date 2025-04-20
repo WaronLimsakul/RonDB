@@ -1,6 +1,7 @@
 #include "b-tree.h"
 #include "cursor.h"
 #include "vm.h"
+#include "config.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -145,13 +146,29 @@ void *internal_node_cell(void *node, uint32_t cell_num) {
 
 // child is at the front of the cell;
 uint32_t *internal_node_child(void *node, uint32_t child_num) {
-    assert(child_num <= *internal_node_num_keys(node));
+    uint32_t num_keys = internal_node_num_keys(node);
+    if (child_num > num_keys) {
+        printf("tried to access child_num: %u > %u :num_keys\n", num_keys, child_num);
+        exit(EXIT_FAILURE);
+    }
+
     // right most child case
     if (child_num == *internal_node_num_keys(node)) {
-        return internal_node_right_child(node);
+        uint32_t *right_child = internal_node_right_child(node);
+        if (*right_child == INVALID_PAGE_NUM) {
+            printf("tried to access the right child but invalid page. num_keys: %u, child_num: %u\n", num_keys, child_num);
+            exit(EXIT_FAILURE);
+        }
+        return right_child;
     }
+
     // inside cell case
-    return internal_node_cell(node, child_num);
+    uint32_t *node_cell = internal_node_cell(node, child_num);
+    if (*node_cell == INVALID_PAGE_NUM) {
+        printf("tried to access child_num: %u but invalid page\n", child_num)
+        exit(EXIT_FAILURE);
+    }
+    return node_cell;
 }
 
 uint32_t *internal_node_key(void *node, uint32_t cell_num) {
@@ -164,14 +181,19 @@ void init_internal_node(void *node) {
     node_set_type(node, INTERNAL_NODE);
     *internal_node_num_keys(node) = 0;
     node_set_is_root(node, false);
+    // if not do this, we might got root as a right child
+    *internal_node_right_child(node) = INVALID_PAGE_NUM;
 }
 
-uint32_t get_node_max_key(void *node) {
+uint32_t get_node_max_key(Pager *pager, void *node) {
     assert(node);
 
     switch (node_type(node)) {
         case INTERNAL_NODE:
-            return *internal_node_key(node, *internal_node_num_keys(node) - 1);
+            // go right
+            uint32_t right_page_num = internal_node_right_child(node);
+            void *rigth_child = pager_get_page(pager, right_page_num);
+            return get_node_max_key(pager, right_child);
         case LEAF_NODE:
             return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
         default:
@@ -247,12 +269,19 @@ static void update_internal_node_key(void *node, uint32_t old_key, uint32_t new_
     *internal_node_key(node, target_cell_num) = new_key;
 }
 
+static void internal_node_split_and_insert(
+    Table *table,
+    uint32_t parent_page_num,
+    uint32_t child_page_num
+);
+
 // plan:
 // 1. check if the node is full
-// 2. check if I have to shift and write
+// 2. check if the node is empty
+// 3. check if I have to shift and write
 // or put right child at the back and replace the right child
-// 3. do the write
-// 4. increment num keys
+// 4. do the write
+// 5. increment num keys
 static void internal_node_insert(
     Table *table,
     uint32_t parent_page_num,
@@ -267,20 +296,28 @@ static void internal_node_insert(
     // 1. check if node is full
     uint32_t original_num_keys = *internal_node_num_keys(parent_node);
     if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
-        printf("need to implement splitting internal node\n");
-        exit(EXIT_FAILURE);
+        internal_node_split_and_insert(pager, parent_page_num, child_page_num);
+        return;
     }
-    // !!! important !!! you need to increment first before doing all the logic
+
+    // 2. check if node is empty (right child num is INVALID_PAGE_NUM),
+    // if it is, just put the right child
+    uint32_t right_child_page_num = *internal_node_right_child(parent_node);
+    if (right_child_page_num == INVALID_PAGE_NUM) {
+        *(internal_node_right_child(parent_node)) = child_page_num;
+        return;
+    }
+
+    // prepare for check step 3
+    uint32_t child_max_key = get_node_max_key(child_node);
+
+    void *right_child = pager_get_page(pager, right_child_page_num);
+    uint32_t right_child_max_key = get_node_max_key(right_child);
+
+    // !!! important !!! you need to increment first before doing inserting logic
     // so that when write at original_num_keys position, we actually write at
     // the end of body and not the right most
     *internal_node_num_keys(parent_node) = original_num_keys + 1;
-
-    // prepare for check step 2
-    uint32_t child_max_key = get_node_max_key(child_node);
-
-    uint32_t right_child_page_num = *internal_node_right_child(parent_node);
-    void *right_child = pager_get_page(pager, right_child_page_num);
-    uint32_t right_child_max_key = get_node_max_key(right_child);
 
     // 2. check if we shift or just add back
     if (child_max_key > right_child_max_key) {
@@ -449,4 +486,14 @@ Cursor *internal_node_find(Table *table, uint32_t page_num, uint32_t key) {
     printf("error: node has no type\n");
     exit(EXIT_FAILURE);
     return NULL;
+}
+
+static void internal_node_split_and_insert(
+    Table *table,
+    uint32_t parent_page_num,
+    uint32_t child_page_num,
+) {
+    assert(table);
+    uint32_t old_page_num = parent_page_num;
+    uint32_t old_paeg_max =
 }
