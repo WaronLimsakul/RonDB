@@ -2,7 +2,6 @@
 
 A minimalist, fast, and persistent SQL-like database engine written in C — featuring a custom B+ tree, pager, and low-level row storage, all built from scratch with zero dependencies.
 
----
 
 ## 💡 Why?
 
@@ -13,7 +12,6 @@ Goals:
 - Implement a B+ tree with persistence
 - Learn how SQL parsing maps to low-level operations
 
----
 
 ## ⚡ Quick Start
 
@@ -34,7 +32,6 @@ Tree:
 exiting! Bye bye
 ```
 
----
 
 ## 🛠️ Usage
 
@@ -50,7 +47,6 @@ Technical specs:
   - Data format: fixed-length row layout
   - Persistence: fully disk-backed
 
----
 
 ## 🤝 Contributing
 This project was built for learning and showcasing low-level design — but PRs are welcome.
@@ -59,5 +55,3 @@ Possible extensions:
   - Implement transactions or concurrency
   - Add support for multiple tables
 Feel free to fork and build on it. Open an issue if you want to discuss ideas
-
----
