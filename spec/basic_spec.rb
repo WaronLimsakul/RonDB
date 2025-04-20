@@ -41,9 +41,10 @@ describe 'database' do
     end
     script << ".exit"
     result = run_script(script)
-    expect(result[-1]).to match(
-      "RonDB >need to implement splitting internal node"
-    )
+    expect(result.last(2)).to match_array([
+      "RonDB >insert 1",
+      "RonDB >exiting! Byebye",
+    ])
   end
 
   it 'allows inserting maximum length strings' do

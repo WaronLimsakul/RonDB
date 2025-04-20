@@ -37,8 +37,8 @@ typedef enum {
     LEAF_NODE,
 } NodeType;
 
-int32_t* leaf_node_num_cells(void *node);
-int32_t* leaf_node_next_leaf(void *node);
+uint32_t* leaf_node_num_cells(void *node);
+uint32_t* leaf_node_next_leaf(void *node);
 void *leaf_node_cell(void *node, int32_t cell_num);
 uint32_t *leaf_node_key(void *node, int32_t cell_num);
 void *leaf_node_value(void *node, int32_t cell_num);
@@ -58,7 +58,12 @@ void *internal_node_cell(void *node, uint32_t cell_num);
 uint32_t *internal_node_child(void *node, uint32_t child_num);
 uint32_t *internal_node_key(void *node, uint32_t cell_num);
 void init_internal_node(void *node);
-uint32_t get_node_max_key(void *node);
+uint32_t get_node_max_key(Pager *pager, void *node);
 
 Cursor *internal_node_find(Table *table, uint32_t page_num, uint32_t key);
 uint32_t internal_node_find_child(void *node, uint32_t key);
+void internal_node_split_and_insert(
+    Table *table,
+    uint32_t parent_page_num,
+    uint32_t child_page_num
+);

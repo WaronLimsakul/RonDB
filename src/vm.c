@@ -25,23 +25,20 @@ static void indent(uint32_t level) {
 }
 
 static void print_tree(Pager *pager, uint32_t page_num, uint32_t level) {
-    if (page_num == INVALID_PAGE_NUM) {
-        // might comment the print
-        printf("tried to print page_num: %u in level: %u but invalid\n", page_num, level);
-        return;
-    }
     void *node = pager_get_page(pager, page_num);
     indent(level);
     switch (node_type(node)) {
         case INTERNAL_NODE:
             uint32_t num_keys = *internal_node_num_keys(node);
             printf("- internal (size %u)\n", num_keys);
-            for (uint32_t i = 0; i < num_keys; i++) {
-                print_tree(pager, *internal_node_child(node, i), level + 1);
-                indent(level + 1);
-                printf("- key %d\n", *internal_node_key(node, i));
+            if (num_keys > 0) {
+                for (uint32_t i = 0; i < num_keys; i++) {
+                    print_tree(pager, *internal_node_child(node, i), level + 1);
+                    indent(level + 1);
+                    printf("- key %d\n", *internal_node_key(node, i));
+                }
+                print_tree(pager, *internal_node_right_child(node), level + 1);
             }
-            print_tree(pager, *internal_node_right_child(node), level + 1);
             break;
         case LEAF_NODE:
             uint32_t num_cells = *leaf_node_num_cells(node);

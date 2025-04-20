@@ -284,7 +284,13 @@ step 14: split the internal node
 0. rewrite get_node_max_key(pager, node) : walk down to the right
 1. we need internal_node_split_and_insert(table, parent_page_num, child_page_num)
     - store old_page_num, old_page_max
-    - store
+    - store value to tell if old_node is root
+    - move right child to new_node and set to invalid page
+    - Loop
+        - Obtain a reference to the old node’s key and child at the current index
+        - Insert the child into the sibling node
+        - Update the child’s parent value to point to the sibling node
+        - Decrement the old node’s number of keys
 2. in internal_node_insert(), we now have to check that internal node is empty
 or not before inserting. the first thing to fill is right child.
 3. when init internal node, set right child to be INVALID_PAGE_NUM
